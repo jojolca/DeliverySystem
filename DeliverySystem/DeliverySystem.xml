@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DeliverySystem</name>
+    </assembly>
+    <members>
+        <member name="M:DeliverySystem.Controllers.ExampleController.Get">
+            <summary>
+            Get All Data
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:DeliverySystem.Controllers.ExampleController.Post(DeliverySystem.Variables.Example.CreateTaskRequestEntity)">
+            <summary>
+            Create Task
+            </summary>
+            <param name="request">Task Data</param>
+        </member>
+        <member name="M:DeliverySystem.Controllers.ExampleController.Post(System.String)">
+            <summary>
+            Get All Data
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:DeliverySystem.Controllers.WeatherForecastController.Get">
+            <summary>
+            取得
+            </summary>
+            <returns>WeatherForecast</returns>
+            <response code="201">Returns the newly created item</response>
+            <response code="400">If the item is null</response>         
+        </member>
+        <member name="T:DeliverySystem.Variables.Example.CreateTaskRequestEntity">
+            <summary>
+            Create Task Request
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.Example.CreateTaskRequestEntity.User">
+            <summary>
+            User
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.Example.CreateTaskRequestEntity.Column">
+            <summary>
+            欄位名稱內容
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.Example.CreateTaskRequestEntity.RowData">
+            <summary>
+            每一列的內容(使用逗號分隔)
+            </summary>
+        </member>
+        <member name="T:DeliverySystem.Variables.Example.CreateTaskResponseEntitycs">
+            <summary>
+            Create Task Response
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.Example.CreateTaskResponseEntitycs.TaskId">
+            <summary>
+            Task Id
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.Example.CreateTaskResponseEntitycs.Status">
+            <summary>
+            狀態
+            </summary>
+        </member>
+        <member name="T:DeliverySystem.Variables.ResponseBase">
+            <summary>
+            Response Base
+            </summary>
+        </member>
+        <member name="P:DeliverySystem.Variables.ResponseBase.Message">
+            <summary>
+            Message
+            </summary>
+        </member>
+    </members>
+</doc>
