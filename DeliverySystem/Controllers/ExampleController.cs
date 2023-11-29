@@ -2,6 +2,7 @@
 using DeliverySystem.Module;
 using DeliverySystem.Variables;
 using DeliverySystem.Variables.Example;
+using DeliverySystem.Variables.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -19,11 +20,12 @@ namespace DeliverySystem.Controllers
     {
         private ITaskService _taskService;
 
-        //private readonly IHubContext<NotificationHub> _hubContext;
+        private IRepositoryOperater _repository;
 
-        public ExampleController(IHubContext<SignalRHub> hubContext)
+        public ExampleController(IHubContext<SignalRHub> hubContext, IRepositoryOperater repository)
         {
             _taskService = new TaskService(hubContext);
+            _repository = repository;
         }
 
         
@@ -32,9 +34,9 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IEnumerable<ShippingInformation>> Get()
         {
-            return new string[] { "value1", "value2" };
+            return await _repository.GetShippingInformation();
         }
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace DeliverySystem.Controllers
         }
 
         /// <summary>
-        /// Get All Data
+        /// Send Message
         /// </summary>
         /// <returns></returns>
         [HttpPost("/SendMsg/{msg}")]

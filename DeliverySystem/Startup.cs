@@ -9,6 +9,7 @@ using System.IO;
 using System.Reflection;
 using DeliverySystem.Module;
 using DeliverySystem.Interface;
+using DeliverySystem.Variables.Repository;
 
 namespace DeliverySystem
 {
@@ -24,6 +25,10 @@ namespace DeliverySystem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionData = Configuration.GetSection("ExampleDB").Get<SqlConnectionInfo>();
+            IRepositoryOperater repository = new RepositoryService(connectionData.GetSqlConnectionStringBuilder());
+            services.AddSingleton(repository);
+
             services.AddSignalR();
             services.AddControllers();
 

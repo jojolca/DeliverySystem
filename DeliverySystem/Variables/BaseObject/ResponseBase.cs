@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace DeliverySystem.Variables
+namespace DeliverySystem.Variables.BaseObject
 {
     /// <summary>
     /// Response Base
