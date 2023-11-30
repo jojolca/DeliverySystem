@@ -162,6 +162,14 @@ namespace DeliverySystem.Module
             });
         }
 
+        private void CheckTaskStatus()
+        {
+            Task.Run(async () => 
+            {
+                
+            });
+        }
+
         private RawShippingInformation GetRawShippingInformation(string taskSlaveDataStr)
         {
             var rawShippingInfo = new Dictionary<string, string>();
