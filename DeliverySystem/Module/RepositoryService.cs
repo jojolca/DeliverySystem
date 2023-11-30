@@ -30,7 +30,8 @@ namespace DeliverySystem.Module
             IEnumerable<ShippingInformation> resutlt = new ShippingInformation[0];
 
             string cmd = $@"select * 
-                            from [ExampleDB].[dbo].[ShippingInformation]";
+                            from [ExampleDB].[dbo].[ShippingInformation]
+                            where ShippingLabel_IsDeleted = 0";
 
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
@@ -46,17 +47,19 @@ namespace DeliverySystem.Module
         /// 取得所有配送標籤資料
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<ShippingLabel>> GetShippingLabel()
+        public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
         {
-            IEnumerable<ShippingLabel> resutlt = new ShippingLabel[0];
+            var resutlt = new ShippingLabel();
 
             string cmd = $@"select * 
-                            from [ExampleDB].[dbo].[ShippingLabel]";
+                            from [ExampleDB].[dbo].[ShippingLabel]
+                            where ShippingLabel_IsDeleted = 0
+                            and ShippingLabel_ShippingOriginalTrackingNumber = @originalTrackingNumber";
 
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
                 sqlConnection.Open();
-                resutlt = await sqlConnection.QueryAsync<ShippingLabel>(cmd);
+                resutlt = await sqlConnection.QueryFirstAsync<ShippingLabel>(cmd, new { originalTrackingNumber });
             }
 
             return resutlt;
@@ -198,38 +201,6 @@ namespace DeliverySystem.Module
             return shippingLabelId;
         }
 
-        public async Task UpdateShippingInformationStatus(string status,long id)
-        {
-            long taskId = 0;
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                connection.Open();
-
-                using (var tran = connection.BeginTransaction())
-                {
-                    taskId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[Task]
-                                                               ([Task_Status]
-                                                               ,[Task_StatusUpdatedDateTime]
-                                                               ,[Task_CreatedUser]
-                                                               ,[Task_CreatedDateTime]
-                                                               ,[Task_UpdatedUser]
-                                                               ,[Task_UpdatedDateTime]
-                                                               ,[Task_IsDeleted])
-                                                         VALUES
-                                                               (@Task_Status
-                                                               ,@Task_StatusUpdatedDateTime
-                                                               ,@Task_CreatedUser
-                                                               ,@Task_CreatedDateTime
-                                                               ,@Task_UpdatedUser
-                                                               ,@Task_UpdatedDateTime
-                                                               ,@Task_IsDeleted);
-                                                         SELECT SCOPE_IDENTITY()", task);
-                }
-            }
-
-            return taskId;
-        }
-
         public async Task<long> InsertShippingInformation(ShippingInformation shippingInformation)
         {
 
@@ -308,6 +279,69 @@ namespace DeliverySystem.Module
             }
 
             return shippingInformationId;
+        }
+
+        public async Task<bool> UpdateShippingInformationStatus(string status, long id)
+        {
+            int effectiveRows = 0;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+
+                using (var tran = connection.BeginTransaction())
+                {
+                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[ShippingInformation]
+                                                               Set [ShippingInformation_Status] = @status
+                                                               ,[ShippingInformation_StatusUpdatedDateTime] = GetDate()
+                                                                where ShippingInformation_Id = @id;
+                                                         SELECT @@ROWCOUNT", new { status, id });
+                    tran.Commit();
+                }
+            }
+
+            return effectiveRows == 1;
+        }
+
+        public async Task<bool> UpdateTaskStatus(string status, long id)
+        {
+            int effectiveRows = 0;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+
+                using (var tran = connection.BeginTransaction())
+                {
+                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[Task]
+                                                               Set [Task_Status] = @status
+                                                               ,[Task_StatusUpdatedDateTime] = GetDate()
+                                                                where Task_Id = @id;
+                                                         SELECT @@ROWCOUNT", new { status, id });
+                    tran.Commit();
+                }
+            }
+
+            return effectiveRows == 1;
+        }
+
+        public async Task<bool> UpdateTaskSlaveStatus(string status, long id)
+        {
+            int effectiveRows = 0;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+
+                using (var tran = connection.BeginTransaction())
+                {
+                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[TaskSlave]
+                                                               Set [TaskSlave_Status] = @status
+                                                               ,[TaskSlave_StatusUpdatedDateTime] = GetDate()
+                                                                where TaskSlave_Id = @id;
+                                                         SELECT @@ROWCOUNT", new { status, id });
+                    tran.Commit();
+                }
+            }
+
+            return effectiveRows == 1;
         }
     }
 }

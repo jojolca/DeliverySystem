@@ -28,26 +28,47 @@ namespace DeliverySystem.Controllers
             _repository = repository;
         }
 
-        
+
         /// <summary>
-        /// Get All Data
+        /// Get All ShippingInformation
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpGet("/shippinginformation")]
         public async Task<IEnumerable<ShippingInformation>> Get()
         {
             return await _repository.GetShippingInformation();
         }
 
         /// <summary>
+        /// Get ShippingLabel
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("/shippinglabel/{originalTrackingNumber}")]
+        public async Task<ShippingLabel> Get(string originalTrackingNumber)
+        {
+            return await _repository.GetShippingLabel(originalTrackingNumber);
+        }
+
+        /// <summary>
         /// Create Task
         /// </summary>
         /// <param name="request">Task Data</param>
-        [HttpPost("/CreateTask")]
-        public async Task<CreateTaskResponseEntitycs> Post([FromBody] CreateTaskRequestEntity request)
+        [HttpPost("/createTask")]
+        public async Task<ActionResult<CreateTaskResponseEntitycs>> Post([FromBody] CreateTaskRequestEntity request)
         {
-            _taskService.
-            return new CreateTaskResponseEntitycs();
+            var taskId = await _taskService.CreateTasks(request);
+            if(taskId > 0)
+            {
+                return Ok(new CreateTaskResponseEntitycs()
+                {
+                    TaskId = taskId,
+                    Status = 1
+                });
+            }
+            else
+            {
+                return BadRequest(new CreateTaskResponseEntitycs() { Status = 0});
+            }
         }
 
         /// <summary>

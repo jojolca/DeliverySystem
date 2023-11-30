@@ -10,6 +10,6 @@ namespace DeliverySystem.Interface
     {
         Task SendMsg(string msg,string user);
 
-        Task<bool> CreateTasks(CreateTaskRequestEntity data);
+        Task<long> CreateTasks(CreateTaskRequestEntity data);
     }
 }
