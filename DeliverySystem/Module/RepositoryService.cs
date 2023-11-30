@@ -36,5 +36,74 @@ namespace DeliverySystem.Module
 
             return resutlt;
         }
+
+        public async Task<long> InsertTask(TaskObject task, TaskSlave taskSlave)
+        {
+            long taskId = 0;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+
+                using (var tran = connection.BeginTransaction())
+                {
+                    taskId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[Task]
+                                                               ([Task_Status]
+                                                               ,[Task_StatusUpdatedDateTime]
+                                                               ,[Task_CreatedUser]
+                                                               ,[Task_CreatedDateTime]
+                                                               ,[Task_UpdatedUser]
+                                                               ,[Task_UpdatedDateTime]
+                                                               ,[Task_IsDeleted])
+                                                         VALUES
+                                                               (@Task_Status
+                                                               ,@Task_StatusUpdatedDateTime
+                                                               ,@Task_CreatedUser
+                                                               ,@Task_CreatedDateTime
+                                                               ,@Task_UpdatedUser
+                                                               ,@Task_UpdatedDateTime
+                                                               ,@Task_IsDeleted);
+                                                         SELECT SCOPE_IDENTITY()",task);
+                    if (taskId <= 0)
+                    {
+                        tran.Rollback();
+                    }
+
+                    taskSlave.TaskSlave_TaskId = taskId;
+                    var taskSlaveId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[TaskSlave]
+                                                                                       ([TaskSlave_TaskId]
+                                                                                       ,[TaskSlave_Status]
+                                                                                       ,[TaskSlave_StatusUpdatedDateTime]
+                                                                                       ,[TaskSlave_CreatedUser]
+                                                                                       ,[TaskSlave_CreatedDateTime]
+                                                                                       ,[TaskSlave_UpdatedUser]
+                                                                                       ,[TaskSlave_UpdatedDateTime]
+                                                                                       ,[TaskSlave_Data]
+                                                                                       ,[TaskSlave_ErrorMsg]
+                                                                                       ,[TaskSlave_IsDeleted])
+                                                                                 VALUES
+                                                                                       (@TaskSlave_TaskId
+                                                                                       ,@TaskSlave_Status
+                                                                                       ,@TaskSlave_StatusUpdatedDateTime
+                                                                                       ,@TaskSlave_CreatedUser
+                                                                                       ,@TaskSlave_CreatedDateTime
+                                                                                       ,@TaskSlave_UpdatedUser
+                                                                                       ,@TaskSlave_UpdatedDateTime
+                                                                                       ,@TaskSlave_Data
+                                                                                       ,@TaskSlave_ErrorMsg
+                                                                                       ,@TaskSlave_IsDeleted)
+                                                                            SELECT SCOPE_IDENTITY()",taskSlave);
+                    if(taskSlaveId <= 0)
+                    {
+                        tran.Rollback();
+                    }
+                    else
+                    {
+                        tran.Commit();
+                    }
+                }
+            }
+
+            return taskId;
+        }
     }
 }

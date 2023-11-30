@@ -7,5 +7,7 @@ namespace DeliverySystem.Interface
     public interface IRepositoryOperater
     {
         Task<IEnumerable<ShippingInformation>> GetShippingInformation();
+
+        Task<long> InsertTask(TaskObject task, TaskSlave taskSlave);
     }
 }
