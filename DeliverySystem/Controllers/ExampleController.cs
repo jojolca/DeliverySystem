@@ -22,9 +22,9 @@ namespace DeliverySystem.Controllers
 
         private IRepositoryOperater _repository;
 
-        public ExampleController(IHubContext<SignalRHub> hubContext, IRepositoryOperater repository)
+        public ExampleController(IHubContext<SignalRHub> hubContext, IRepositoryOperater repository, IThirdPartyAPIOperater thirdPartyAPIOperater)
         {
-            _taskService = new TaskService(hubContext);
+            _taskService = new TaskService(hubContext, repository, thirdPartyAPIOperater);
             _repository = repository;
         }
 
@@ -46,7 +46,7 @@ namespace DeliverySystem.Controllers
         [HttpPost("/CreateTask")]
         public async Task<CreateTaskResponseEntitycs> Post([FromBody] CreateTaskRequestEntity request)
         {
-            
+            _taskService.
             return new CreateTaskResponseEntitycs();
         }
 

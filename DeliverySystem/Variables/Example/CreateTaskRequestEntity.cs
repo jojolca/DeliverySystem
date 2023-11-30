@@ -21,7 +21,7 @@ namespace DeliverySystem.Variables.Example
         /// 欄位名稱內容
         /// </summary>
         [JsonPropertyName("column")]
-        public string Column { set; get; }
+        public string[] Column { set; get; }
 
         /// <summary>
         /// 每一列的內容(使用逗號分隔)

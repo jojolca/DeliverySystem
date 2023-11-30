@@ -8,6 +8,12 @@ namespace DeliverySystem.Interface
     {
         Task<IEnumerable<ShippingInformation>> GetShippingInformation();
 
-        Task<long> InsertTask(TaskObject task, TaskSlave taskSlave);
+        Task<long> InsertTask(TaskObject task);
+
+        Task<long> InsertTaskSlave(TaskSlave taskSlave);
+
+        Task<long> InsertShippingLabel(ShippingLabel shippingLabel);
+
+        Task<long> InsertShippingInformation(ShippingInformation shippingInformation);
     }
 }
