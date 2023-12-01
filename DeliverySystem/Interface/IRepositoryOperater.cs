@@ -16,7 +16,7 @@ namespace DeliverySystem.Interface
 
         Task<long> InsertShippingInformation(ShippingInformation shippingInformation);
 
-        Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber);
+        Task<IEnumerable<ShippingLabel>> GetShippingLabel(string originalTrackingNumber);
 
         Task<bool> UpdateTaskStatus(string status, long id);
 

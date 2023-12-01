@@ -18,13 +18,13 @@ namespace DeliverySystem.Controllers
     [ApiController]
     public class ExampleController : ControllerBase
     {
-        private ITaskService _taskService;
+        private ITaskDataService _taskService;
 
         private IRepositoryOperater _repository;
 
-        public ExampleController(IHubContext<SignalRHub> hubContext, IRepositoryOperater repository, IThirdPartyAPIOperater thirdPartyAPIOperater)
+        public ExampleController(ITaskDataService taskService, IRepositoryOperater repository)
         {
-            _taskService = new TaskService(hubContext, repository, thirdPartyAPIOperater);
+            _taskService = taskService;
             _repository = repository;
         }
 
@@ -44,7 +44,7 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/shippinglabel/{originalTrackingNumber}")]
-        public async Task<ShippingLabel> Get(string originalTrackingNumber)
+        public async Task<IEnumerable<ShippingLabel>> Get(string originalTrackingNumber)
         {
             return await _repository.GetShippingLabel(originalTrackingNumber);
         }
@@ -54,7 +54,7 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <param name="request">Task Data</param>
         [HttpPost("/createTask")]
-        public async Task<ActionResult<CreateTaskResponseEntitycs>> Post([FromBody] CreateTaskRequestEntity request)
+        public async Task<ActionResult<CreateTaskResponseEntitycs>> Post( CreateTaskRequestEntity request)
         {
             var taskId = await _taskService.CreateTasks(request);
             if(taskId > 0)
@@ -71,14 +71,14 @@ namespace DeliverySystem.Controllers
             }
         }
 
-        /// <summary>
-        /// Send Message
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("/SendMsg/{msg}")]
-        public async Task Post(string msg)
-        {
-            await _taskService.SendMsg(msg, "server");
-        }
+        ///// <summary>
+        ///// Send Message
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpPost("/SendMsg/{msg}")]
+        //public async Task Post(string msg)
+        //{
+        //    await _taskService.SendMsg(msg, "server");
+        //}
     }
 }

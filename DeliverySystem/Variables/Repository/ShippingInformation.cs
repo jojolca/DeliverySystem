@@ -90,10 +90,10 @@ namespace DeliverySystem.Variables.Repository
         public DateTime ShippingInformation_StatusUpdatedDateTime { get; set; }
 
         [JsonPropertyName("CreatedUser")]
-        public string TaskSlave_CreatedUser { get; set; }
+        public string ShippingInformation_CreatedUser { get; set; }
 
         [JsonPropertyName("UpdatedUser")]
-        public string TaskSlave_UpdatedUser { get; set; }
+        public string ShippingInformation_UpdatedUser { get; set; }
 
         [JsonPropertyName("IsDeleted")]
         public bool ShippingInformation_IsDeleted { get; set; }

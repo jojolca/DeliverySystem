@@ -30,8 +30,8 @@ namespace DeliverySystem.Module
             IEnumerable<ShippingInformation> resutlt = new ShippingInformation[0];
 
             string cmd = $@"select * 
-                            from [ExampleDB].[dbo].[ShippingInformation]
-                            where ShippingLabel_IsDeleted = 0";
+                            from [ExampleDB].[dbo].[ShippingInformation](NOLOCK)
+                            where ShippingInformation_IsDeleted = 0";
 
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
@@ -47,19 +47,19 @@ namespace DeliverySystem.Module
         /// 取得所有配送標籤資料
         /// </summary>
         /// <returns></returns>
-        public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
+        public async Task<IEnumerable<ShippingLabel>> GetShippingLabel(string originalTrackingNumber)
         {
-            var resutlt = new ShippingLabel();
+            IEnumerable<ShippingLabel> resutlt = new List<ShippingLabel>();
 
             string cmd = $@"select * 
-                            from [ExampleDB].[dbo].[ShippingLabel]
+                            from [ExampleDB].[dbo].[ShippingLabel](NOLOCK)
                             where ShippingLabel_IsDeleted = 0
                             and ShippingLabel_ShippingOriginalTrackingNumber = @originalTrackingNumber";
 
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
                 sqlConnection.Open();
-                resutlt = await sqlConnection.QueryFirstAsync<ShippingLabel>(cmd, new { originalTrackingNumber });
+                resutlt = await sqlConnection.QueryAsync<ShippingLabel>(cmd, new { originalTrackingNumber });
             }
 
             return resutlt;
@@ -77,9 +77,7 @@ namespace DeliverySystem.Module
             {
                 connection.Open();
 
-                using (var tran = connection.BeginTransaction())
-                {
-                    taskId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[Task]
+                taskId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[Task]
                                                                ([Task_Status]
                                                                ,[Task_StatusUpdatedDateTime]
                                                                ,[Task_CreatedUser]
@@ -95,8 +93,7 @@ namespace DeliverySystem.Module
                                                                ,@Task_UpdatedUser
                                                                ,@Task_UpdatedDateTime
                                                                ,@Task_IsDeleted);
-                                                         SELECT SCOPE_IDENTITY()",task);                    
-                }
+                                                         SELECT SCOPE_IDENTITY()", task);
             }
 
             return taskId;
@@ -113,10 +110,7 @@ namespace DeliverySystem.Module
             using (var connection = new SqlConnection(ConnectionString))
             {
                 connection.Open();
-
-                using (var tran = connection.BeginTransaction())
-                {                  
-                    taskSlaveId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[TaskSlave]
+                taskSlaveId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[TaskSlave]
                                                                                        ([TaskSlave_TaskId]
                                                                                        ,[TaskSlave_Status]
                                                                                        ,[TaskSlave_StatusUpdatedDateTime]
@@ -139,8 +133,6 @@ namespace DeliverySystem.Module
                                                                                        ,@TaskSlave_ErrorMsg
                                                                                        ,@TaskSlave_IsDeleted)
                                                                             SELECT SCOPE_IDENTITY()", taskSlave);
-                  
-                }
             }
 
             return taskSlaveId;
@@ -153,9 +145,7 @@ namespace DeliverySystem.Module
             {
                 connection.Open();
 
-                using (var tran = connection.BeginTransaction())
-                {
-                    shippingLabelId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[ShippingLabel]
+                shippingLabelId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[ShippingLabel]
                                                                                    ([ShippingLabel_BarCode]
                                                                                    ,[ShippingLabel_SalesOffoice]
                                                                                    ,[ShippingLabel_ZipCode]
@@ -194,8 +184,6 @@ namespace DeliverySystem.Module
                                                                                    ,@ShippingLabel_ShippingSenderCompany
                                                                                    ,@ShippingLabel_CreatedUser)
                                                                                     SELECT SCOPE_IDENTITY()", shippingLabel);
-
-                }
             }
 
             return shippingLabelId;
@@ -209,9 +197,7 @@ namespace DeliverySystem.Module
             {
                 connection.Open();
 
-                using (var tran = connection.BeginTransaction())
-                {
-                    shippingInformationId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[ShippingInformation]
+                shippingInformationId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[ShippingInformation]
                                                                                        ([ShippingInformation_TrackingNumber]
                                                                                        ,[ShippingInformation_SlaveTrackingNumber]
                                                                                        ,[ShippingInformation_OriginalTrackingNumber]
@@ -275,7 +261,6 @@ namespace DeliverySystem.Module
                                                                                        ,@ShippingInformation_IsDeleted)
                                                                                     SELECT SCOPE_IDENTITY()", shippingInformation);
 
-                }
             }
 
             return shippingInformationId;
@@ -290,12 +275,21 @@ namespace DeliverySystem.Module
 
                 using (var tran = connection.BeginTransaction())
                 {
-                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[ShippingInformation]
+                    try 
+                    {
+                        effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[ShippingInformation]
                                                                Set [ShippingInformation_Status] = @status
                                                                ,[ShippingInformation_StatusUpdatedDateTime] = GetDate()
                                                                 where ShippingInformation_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id });
-                    tran.Commit();
+                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                        tran.Commit();
+                    }
+                    catch (Exception ex) 
+                    {
+                        var err = ex.ToString();
+                        //Todo: add log
+                        tran.Rollback();
+                    }                   
                 }
             }
 
@@ -311,12 +305,21 @@ namespace DeliverySystem.Module
 
                 using (var tran = connection.BeginTransaction())
                 {
-                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[Task]
+                    try
+                    {
+                        effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[Task]
                                                                Set [Task_Status] = @status
                                                                ,[Task_StatusUpdatedDateTime] = GetDate()
                                                                 where Task_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id });
-                    tran.Commit();
+                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                        tran.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        var err = ex.ToString();
+                        //Todo: add log
+                        tran.Rollback();
+                    }
                 }
             }
 
@@ -332,12 +335,21 @@ namespace DeliverySystem.Module
 
                 using (var tran = connection.BeginTransaction())
                 {
-                    effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[TaskSlave]
+                    try
+                    {
+                        effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[TaskSlave]
                                                                Set [TaskSlave_Status] = @status
                                                                ,[TaskSlave_StatusUpdatedDateTime] = GetDate()
                                                                 where TaskSlave_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id });
-                    tran.Commit();
+                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                        tran.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        var err = ex.ToString();
+                        //Todo: add log
+                        tran.Rollback();
+                    }
                 }
             }
 

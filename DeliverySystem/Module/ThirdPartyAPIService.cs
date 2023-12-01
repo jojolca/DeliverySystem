@@ -13,7 +13,7 @@ namespace DeliverySystem.Module
             Random random = new Random();
             return  new ShippingLabel()
             {
-                ShippingLabel_BarCode = DateTime.Now.Ticks.ToString(),
+                ShippingLabel_BarCode = DateTime.Now.ToString("yyyyMMddHHmmss"),
                 ShippingLabel_CreatedDateTime = DateTime.Now,
                 ShippingLabel_CreatedUser = "user1",
                 ShippingLabel_CustomID = "Customer",

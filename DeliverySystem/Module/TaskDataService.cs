@@ -15,13 +15,9 @@ using System.Threading.Tasks;
 
 namespace DeliverySystem.Module
 {
-    public class TaskService : ITaskService
+    public class TaskDataService : ITaskDataService
     {
-        private readonly IHubContext<SignalRHub> _hubContext;
-
         private readonly IRepositoryOperater _repository;
-
-        private readonly IThirdPartyAPIOperater _thirdPartyAPIOperater;
 
         private ConcurrentDictionary<long,int> _processingTasks = new ConcurrentDictionary<long,int>();
 
@@ -31,17 +27,9 @@ namespace DeliverySystem.Module
 
         private ConcurrentDictionary<long, ConcurrentQueue<TaskSlave>> _failTaskSlaves = new ConcurrentDictionary<long, ConcurrentQueue<TaskSlave>>();
 
-        public TaskService(IHubContext<SignalRHub> hubContext, IRepositoryOperater repositoryOperater, IThirdPartyAPIOperater thirdPartyAPIOperater)
+        public TaskDataService(IRepositoryOperater repositoryOperater)
         {
-            _hubContext = hubContext;
             _repository = repositoryOperater;
-            _thirdPartyAPIOperater = thirdPartyAPIOperater;
-            GetLabel();
-        }
-
-        public async Task SendMsg(string msg, string user)
-        {
-            await _hubContext.Clients.All.SendAsync("ReceiveMessage", user, $"[{DateTime.Now}]From {user}:{msg}"); 
         }
 
         public async Task<long> CreateTasks(CreateTaskRequestEntity data)
@@ -86,7 +74,9 @@ namespace DeliverySystem.Module
                                            TaskSlave_Data = JsonConvert.SerializeObject(taskSlaveData),
                                            TaskSlave_IsDeleted = false,
                                            TaskSlave_Status = "Ready",
-                                           TaskSlave_StatusUpdatedDateTime = DateTime.Now
+                                           TaskSlave_StatusUpdatedDateTime = DateTime.Now,
+                                           TaskSlave_UpdatedUser = data.User,
+                                           TaskSlave_UpdatedDateTime = DateTime.Now
                                        };
                                    
                                        var taskSlaveId = await _repository.InsertTaskSlave(taskSlave);
@@ -131,100 +121,19 @@ namespace DeliverySystem.Module
 
         }
 
-        private void GetLabel()
+        public string GetTaskStatus(long taskId)
         {
-            var task = Task.Run(async () => 
-            {
-                while(true)
-                {
-                    if(_waitingToDoTaskSlaves.TryDequeue(out var taskSlave))
-                    {                        
-                        var rawShippingInformation = GetRawShippingInformation(taskSlave.TaskSlave_Data);
-                        var dataBaseShippingInformation = GetShippingInformation(rawShippingInformation);
-                        var shippingInformationId = await _repository.InsertShippingInformation(dataBaseShippingInformation);
-
-                        var label = _thirdPartyAPIOperater.GetLabel(rawShippingInformation);
-                        var labelId = await _repository.InsertShippingLabel(label);
-                        if(labelId > 0) 
-                        {
-                            _successTaskSlaves.AddOrUpdate(taskSlave.TaskSlave_TaskId,
-                            key => new ConcurrentQueue<TaskSlave>(new[] { taskSlave }),
-                            (key, existingQueue) =>
-                            {
-                                existingQueue.Enqueue(taskSlave);
-                                return existingQueue;
-                            });
-
-                            await _repository.UpdateTaskSlaveStatus("Finish", taskSlave.TaskSlave_Id);
-                        }
-                        else 
-                        {
-                            _failTaskSlaves.AddOrUpdate(taskSlave.TaskSlave_TaskId,
-                            key => new ConcurrentQueue<TaskSlave>(new[] { taskSlave }),
-                            (key, existingQueue) =>
-                            {
-                                existingQueue.Enqueue(taskSlave);
-                                return existingQueue;
-                            });
-
-                            await _repository.UpdateTaskSlaveStatus("Fail", taskSlave.TaskSlave_Id);
-                        }
-
-                        string status = GetTaskStatus(taskSlave.TaskSlave_Id);
-                        if (status == "Finish" || status == "Fail" || status == "PartialFail")
-                        {
-                            await _repository.UpdateTaskSlaveStatus(status, taskSlave.TaskSlave_TaskId);
-                            _processingTasks.TryRemove(taskSlave.TaskSlave_Id, out _);
-                            _failTaskSlaves.TryRemove(taskSlave.TaskSlave_Id, out _);
-                            _successTaskSlaves.TryRemove(taskSlave.TaskSlave_Id, out _);
-
-                            NotifyProcessingPercentage(taskSlave.TaskSlave_Id, 1, status);
-                        }
-                    }
-
-                    Thread.Sleep(10);
-                }
-            });
-
-            task.Wait();
-        }
-
-        private void NotifyTaskProcessingPercentage()
-        {
-            var task = Task.Run(() => {
-                foreach (var taskId in _processingTasks.Keys)
-                {
-                    _successTaskSlaves.TryGetValue(taskId, out var successTask);
-                    _processingTasks.TryGetValue(taskId, out var totalTaskCount);
-                    var status = GetTaskStatus(taskId);
-                    if (status == "Processing")
-                    {
-                        double pct = (double)successTask.Count / (double)totalTaskCount;
-                        NotifyProcessingPercentage(taskId, pct, status);
-                    }
-                    else
-                    {
-                        NotifyProcessingPercentage(taskId, 1, status);
-                    }
-                }
-            });
-
-            Task.WaitAll(task);
-        }
-
-        private string GetTaskStatus(long taskId)
-        {
-            _successTaskSlaves.TryGetValue(taskId, out var successTask);
-            _failTaskSlaves.TryGetValue(taskId, out var failTask);
-            _processingTasks.TryGetValue(taskId, out var totalTaskCount);
+            var successCount = _successTaskSlaves.TryGetValue(taskId, out var successTask) ? successTask.Count : 0;
+            var failCount = _failTaskSlaves.TryGetValue(taskId, out var failTask) ? failTask.Count : 0;
+            var totalTaskCount = _processingTasks.TryGetValue(taskId, out var count) ? count : 0;
             
             string status = "Processing";   
-            var isFinish = (successTask.Count + failTask.Count) == totalTaskCount;
-            if(isFinish && failTask.Count > 0) //完成但有錯誤
+            var isFinish = ((successCount + failCount) == totalTaskCount) && totalTaskCount > 0;
+            if(isFinish && failCount > 0) //完成但有錯誤
             {
-                status = totalTaskCount == failTask.Count ? "Fail" : "PartialFail";
+                status = totalTaskCount == failCount ? "Fail" : "PartialFail";
             }
-            else if(isFinish && failTask.Count == 0) //j完成沒錯誤
+            else if(isFinish && failCount == 0) //j完成沒錯誤
             {
                 status = "Finish";
             }
@@ -232,7 +141,7 @@ namespace DeliverySystem.Module
             return status;
         }
 
-        private RawShippingInformation GetRawShippingInformation(string taskSlaveDataStr)
+        public RawShippingInformation GetRawShippingInformation(string taskSlaveDataStr)
         {
             var rawShippingInfo = new Dictionary<string, string>();
             var taskSlaveData = JsonConvert.DeserializeObject<TaskSlaveData>(taskSlaveDataStr);
@@ -244,8 +153,8 @@ namespace DeliverySystem.Module
             var serializeObject = JsonConvert.SerializeObject(rawShippingInfo);
             return JsonConvert.DeserializeObject<RawShippingInformation>(serializeObject);
         }
-        
-        private ShippingInformation GetShippingInformation(RawShippingInformation rawData) 
+
+        public ShippingInformation GetShippingInformation(RawShippingInformation rawData, string createdUser) 
         {
             return new ShippingInformation()
             {
@@ -276,19 +185,78 @@ namespace DeliverySystem.Module
                 ShippingInformation_TotalCount = rawData.ShippingInformation_TotalCount,
                 ShippingInformation_UnionContractId = rawData.ShippingInformation_UnionContractId,
                 ShippingInformation_UnionTrackingNumber= rawData.ShippingInformation_UnionTrackingNumber,
-                ShippingInformation_Weight = rawData.ShippingInformation_Weight
+                ShippingInformation_Weight = rawData.ShippingInformation_Weight,
+                ShippingInformation_CreatedUser = createdUser
             };
         }
 
-        private async void NotifyProcessingPercentage(long taskId, double percentage, string status)
+        public double GetSuccessTaskCount(long taskId)
         {
-            var notification = new List<ProcessingPercentageInfo>(){new ProcessingPercentageInfo()
-                            {
-                                TaskId = taskId,
-                                ProcessingPercentage = percentage,
-                                Status = status
-                            }};
-            await _hubContext.Clients.All.SendAsync("ReceiveMessage", "Server", JsonConvert.SerializeObject(notification));
+            return _successTaskSlaves.TryGetValue(taskId, out var successTask) ? (double)successTask.Count : 0;
+        }
+
+        public double GetFailTaskCount(long taskId)
+        {            
+            return _failTaskSlaves.TryGetValue(taskId, out var failTask) ? (double)failTask.Count : 0;
+        }
+
+        public double GetTotalTaskCount(long taskId)
+        {
+            return _processingTasks.TryGetValue(taskId, out var count) ? (double)count : 0;
+        }
+
+        public List<long> GetProcessingTaskKeys()
+        {
+            return _processingTasks.Keys.ToList();
+        }
+
+        public bool TryDeququeWaitingToDoTaskSlaves(out TaskSlave taskSlave)
+        {
+            return _waitingToDoTaskSlaves.TryDequeue(out taskSlave);
+        }
+
+        public async Task<long> InsertShippingInformation(ShippingInformation dataBaseShippingInformation)
+        {
+           return await _repository.InsertShippingInformation(dataBaseShippingInformation);
+        }
+
+        public async Task<long> InsertShippingLabel(ShippingLabel label)
+        {
+            return await _repository.InsertShippingLabel(label);
+        }
+
+        public async Task AddOrUpdateSuccessTask( TaskSlave taskSlave)
+        {
+            _successTaskSlaves.AddOrUpdate(taskSlave.TaskSlave_TaskId,
+                    key => new ConcurrentQueue<TaskSlave>(new[] { taskSlave }),
+                    (key, existingQueue) =>
+                    {
+                        existingQueue.Enqueue(taskSlave);
+                        return existingQueue;
+                    });
+
+            await _repository.UpdateTaskSlaveStatus("Finish", taskSlave.TaskSlave_Id);
+        }
+
+        public async Task AddOrUpdateFailTask(TaskSlave taskSlave)
+        {
+            _failTaskSlaves.AddOrUpdate(taskSlave.TaskSlave_TaskId,
+                    key => new ConcurrentQueue<TaskSlave>(new[] { taskSlave }),
+                    (key, existingQueue) =>
+                    {
+                        existingQueue.Enqueue(taskSlave);
+                        return existingQueue;
+                    });
+
+            await _repository.UpdateTaskSlaveStatus("Fail", taskSlave.TaskSlave_Id);
+        }
+
+        public async Task RemoveFinishTask(long taskId, string status)
+        {
+            await _repository.UpdateTaskSlaveStatus(status, taskId);
+            _processingTasks.TryRemove(taskId, out _);
+            _failTaskSlaves.TryRemove(taskId, out _);
+            _successTaskSlaves.TryRemove(taskId, out _);
         }
     }
 }

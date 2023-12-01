@@ -27,10 +27,17 @@ namespace DeliverySystem
         {
             var connectionData = Configuration.GetSection("ExampleDB").Get<SqlConnectionInfo>();
             IRepositoryOperater repository = new RepositoryService(connectionData.GetSqlConnectionStringBuilder());
-            services.AddSingleton(repository);
+            services.AddSingleton<IRepositoryOperater>(repository);
+
+            IThirdPartyAPIOperater thirdPartyAPIOperater = new ThirdPartyAPIService();
+            services.AddSingleton<IThirdPartyAPIOperater>(thirdPartyAPIOperater);
+
+            ITaskDataService taskService = new TaskDataService(repository);
+            services.AddSingleton<ITaskDataService>(taskService);
 
             services.AddSignalR();
             services.AddControllers();
+            services.AddHostedService<TaskServiceBackgroundWork>();
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
