@@ -63,7 +63,7 @@ namespace DeliverySystem.Module
                                        var taskSlaveData = new TaskSlaveData()
                                        {
                                            Column = data.Column,
-                                           RowData = row.Split(",").ToArray(),
+                                           RowData = row,
                                        };
                                    
                                        var taskSlave = new TaskSlave()

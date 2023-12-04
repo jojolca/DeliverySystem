@@ -44,9 +44,33 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/shippinglabel/{originalTrackingNumber}")]
-        public async Task<IEnumerable<ShippingLabel>> Get(string originalTrackingNumber)
+        public async Task<IEnumerable<GetShippingLabelResponseEntity>> Get(string originalTrackingNumber)
         {
-            return await _repository.GetShippingLabel(originalTrackingNumber);
+            var rawLabels = await _repository.GetShippingLabel(originalTrackingNumber);
+
+            return rawLabels.Select(x => new GetShippingLabelResponseEntity()
+            {
+                ShippingLabel_Id = x.ShippingLabel_Id,
+                ShippingLabel_BarCode = x.ShippingLabel_BarCode,
+                ShippingLabel_SalesOffice = x.ShippingLabel_SalesOffice,
+                ShippingLabel_ZipCode = x.ShippingLabel_ZipCode,
+                ShippingLabel_ZipCodeVersion = x.ShippingLabel_ZipCodeVersion,
+                ShippingLabel_PakageSize = x.ShippingLabel_PakageSize,
+                ShippingLabel_CreatedDateTime = x.ShippingLabel_CreatedDateTime,
+               ShippingLabel_EstimatedDeliveryDateTime = x.ShippingLabel_EstimatedDeliveryDateTime,
+               ShippingLabel_CustomID = x.ShippingLabel_CustomID,
+               ShippingLabel_ShippingOriginalTrackingNumber = x.ShippingLabel_ShippingOriginalTrackingNumber,
+               ShippingLabel_ShippingCollectedMoney = x.ShippingLabel_ShippingCollectedMoney,
+               ShippingLabel_ShippingRecipientAddress = x.ShippingLabel_ShippingRecipientAddress,
+               ShippingLabel_ShippingRecipientName = x.ShippingLabel_ShippingRecipientName,
+               ShippingLabel_ShippingRecipientPhoneNumber = x.ShippingLabel_ShippingRecipientPhoneNumber,
+               ShippingLabel_ShippingSenderAddress =x.ShippingLabel_ShippingSenderAddress,
+               ShippingLabel_ShippingSenderCompany = x.ShippingLabel_ShippingSenderCompany,
+               ShippingLabel_ShippingSenderName = x.ShippingLabel_ShippingSenderName,
+               ShippingLabel_ShippingSenderPhoneNumber = x.ShippingLabel_ShippingSenderPhoneNumber
+
+
+            }).ToArray();
         }
 
         /// <summary>

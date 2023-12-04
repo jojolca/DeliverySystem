@@ -11,8 +11,8 @@ namespace DeliverySystem.Variables.Repository
         [JsonPropertyName("barCode")]
         public string ShippingLabel_BarCode { get; set; }
 
-        [JsonPropertyName("salesOffoice")]
-        public string ShippingLabel_SalesOffoice { get; set; }
+        [JsonPropertyName("salesOffice")]
+        public string ShippingLabel_SalesOffice { get; set; }
 
         [JsonPropertyName("zipCode")]
         public string ShippingLabel_ZipCode { get; set; }

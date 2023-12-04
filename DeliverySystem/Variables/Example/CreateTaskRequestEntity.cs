@@ -27,6 +27,6 @@ namespace DeliverySystem.Variables.Example
         /// 每一列的內容(使用逗號分隔)
         /// </summary>
         [JsonPropertyName("rowData")]
-        public List<string> RowData { set; get; }
+        public List<string[]> RowData { set; get; }
     }
 }

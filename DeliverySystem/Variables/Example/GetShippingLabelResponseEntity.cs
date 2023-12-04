@@ -11,8 +11,8 @@ namespace DeliverySystem.Variables.Example
         [JsonPropertyName("barCode")]
         public string ShippingLabel_BarCode { get; set; }
 
-        [JsonPropertyName("salesOffoice")]
-        public string ShippingLabel_SalesOffoice { get; set; }
+        [JsonPropertyName("salesOffice")]
+        public string ShippingLabel_SalesOffice { get; set; }
 
         [JsonPropertyName("zipCode")]
         public string ShippingLabel_ZipCode { get; set; }
@@ -20,8 +20,11 @@ namespace DeliverySystem.Variables.Example
         [JsonPropertyName("zipCodeVersion")]
         public string ShippingLabel_ZipCodeVersion { get; set; }
 
-        [JsonPropertyName("pakageSize")]
+        [JsonIgnore]
         public float ShippingLabel_PakageSize { get; set; }
+
+        [JsonPropertyName("pakageSize")]
+        public string PakageSize { get { return $"{ShippingLabel_PakageSize}cm"; } }
 
         [JsonPropertyName("createdDateTime")]
         public DateTime ShippingLabel_CreatedDateTime { get; set; }
@@ -58,8 +61,5 @@ namespace DeliverySystem.Variables.Example
 
         [JsonPropertyName("senderCompany")]
         public string ShippingLabel_ShippingSenderCompany { get; set; }
-
-        [JsonPropertyName("createdUser")]
-        public string ShippingLabel_CreatedUser { get; set; }
     }
 }
