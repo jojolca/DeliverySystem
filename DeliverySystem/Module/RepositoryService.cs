@@ -47,9 +47,9 @@ namespace DeliverySystem.Module
         /// 取得所有配送標籤資料
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<ShippingLabel>> GetShippingLabel(string originalTrackingNumber)
+        public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
         {
-            IEnumerable<ShippingLabel> resutlt = new List<ShippingLabel>();
+            ShippingLabel? resutlt = new ShippingLabel();
 
             string cmd = $@"select * 
                             from [ExampleDB].[dbo].[ShippingLabel](NOLOCK)
@@ -59,7 +59,8 @@ namespace DeliverySystem.Module
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
                 sqlConnection.Open();
-                resutlt = await sqlConnection.QueryAsync<ShippingLabel>(cmd, new { originalTrackingNumber });
+                resutlt = await sqlConnection.QueryFirstOrDefault(cmd, new { originalTrackingNumber }) ;
+                
             }
 
             return resutlt;
@@ -147,7 +148,7 @@ namespace DeliverySystem.Module
 
                 shippingLabelId = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[ShippingLabel]
                                                                                    ([ShippingLabel_BarCode]
-                                                                                   ,[ShippingLabel_SalesOffoice]
+                                                                                   ,[ShippingLabel_SalesOffice]
                                                                                    ,[ShippingLabel_ZipCode]
                                                                                    ,[ShippingLabel_ZipCodeVersion]
                                                                                    ,[ShippingLabel_PakageSize]
@@ -166,7 +167,7 @@ namespace DeliverySystem.Module
                                                                                    ,[ShippingLabel_CreatedUser])
                                                                              VALUES
                                                                                    (@ShippingLabel_BarCode
-                                                                                   ,@ShippingLabel_SalesOffoice
+                                                                                   ,@ShippingLabel_SalesOffice
                                                                                    ,@ShippingLabel_ZipCode
                                                                                    ,@ShippingLabel_ZipCodeVersion
                                                                                    ,@ShippingLabel_PakageSize
@@ -279,9 +280,9 @@ namespace DeliverySystem.Module
                     {
                         effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[ShippingInformation]
                                                                Set [ShippingInformation_Status] = @status
-                                                               ,[ShippingInformation_StatusUpdatedDateTime] = GetDate()
+                                                               ,[ShippingInformation_StatusUpdatedDateTime] = @updatedTime
                                                                 where ShippingInformation_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                                                         SELECT @@ROWCOUNT", new { status, id, updatedTime = DateTime.UtcNow.GetTWTime() }, tran);
                         tran.Commit();
                     }
                     catch (Exception ex) 
@@ -309,9 +310,9 @@ namespace DeliverySystem.Module
                     {
                         effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[Task]
                                                                Set [Task_Status] = @status
-                                                               ,[Task_StatusUpdatedDateTime] = GetDate()
+                                                               ,[Task_StatusUpdatedDateTime] = @updatedTime
                                                                 where Task_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                                                         SELECT @@ROWCOUNT", new { status, id, updatedTime = DateTime.UtcNow.GetTWTime() }, tran);
                         tran.Commit();
                     }
                     catch (Exception ex)
@@ -339,9 +340,9 @@ namespace DeliverySystem.Module
                     {
                         effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[TaskSlave]
                                                                Set [TaskSlave_Status] = @status
-                                                               ,[TaskSlave_StatusUpdatedDateTime] = GetDate()
+                                                               ,[TaskSlave_StatusUpdatedDateTime] = @updatedTime
                                                                 where TaskSlave_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id }, tran);
+                                                         SELECT @@ROWCOUNT", new { status, id, updatedTime = DateTime.UtcNow.GetTWTime() }, tran);
                         tran.Commit();
                     }
                     catch (Exception ex)

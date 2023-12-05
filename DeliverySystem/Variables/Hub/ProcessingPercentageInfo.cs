@@ -12,5 +12,7 @@ namespace DeliverySystem.Variables.Hub
         public double ProcessingPercentage { set; get; }
 
         public string Status { set; get; }
+
+        public string Message { set; get; }
     }
 }

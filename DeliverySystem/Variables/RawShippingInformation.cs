@@ -26,22 +26,22 @@ namespace DeliverySystem.Variables
         public string ShippingInformation_UnionContractId { get; set; }
 
         [JsonProperty(PropertyName ="總件數")]
-        public int ShippingInformation_TotalCount { get; set; }
+        public int? ShippingInformation_TotalCount { get; set; }
 
         [JsonProperty(PropertyName ="運單重量")]
-        public double ShippingInformation_Weight { get; set; }
+        public double? ShippingInformation_Weight { get; set; }
 
         [JsonProperty(PropertyName ="品名")]
         public string ShippingInformation_ProductName { get; set; }
 
         [JsonProperty(PropertyName ="代收貨款")]
-        public decimal ShippingInformation_CollectedMoney { get; set; }
+        public decimal? ShippingInformation_CollectedMoney { get; set; }
 
         [JsonProperty(PropertyName ="稅金")]
-        public decimal ShippingInformation_Tax { get; set; }
+        public decimal? ShippingInformation_Tax { get; set; }
 
         [JsonProperty(PropertyName ="代收手續費")]
-        public decimal ShippingInformation_CollectedFee { get; set; }
+        public decimal? ShippingInformation_CollectedFee { get; set; }
 
         [JsonProperty(PropertyName ="站點代碼")]
         public string ShippingInformation_SiteId { get; set; }

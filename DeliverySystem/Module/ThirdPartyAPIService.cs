@@ -20,7 +20,7 @@ namespace DeliverySystem.Module
                 ShippingLabel_EstimatedDeliveryDateTime = DateTime.Now.AddDays(1),
                 ShippingLabel_PakageSize = random.Next(1, 100),
                 ShippingLabel_SalesOffice = "營業所",
-                ShippingLabel_ShippingCollectedMoney = information.ShippingInformation_CollectedMoney,
+                ShippingLabel_ShippingCollectedMoney = information.ShippingInformation_CollectedMoney??0,
                 ShippingLabel_ShippingOriginalTrackingNumber = information.ShippingInformation_OriginalTrackingNumber,
                 ShippingLabel_ShippingRecipientAddress = information.ShippingInformation_RecipientAddress,
                 ShippingLabel_ShippingRecipientName = information.ShippingInformation_RecipientName,

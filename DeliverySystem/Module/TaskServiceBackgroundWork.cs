@@ -19,11 +19,16 @@ namespace DeliverySystem.Module
 
         private readonly IThirdPartyAPIOperater _thirdPartyAPIOperater;
 
+        //private readonly ILog _logger;
+
+        private readonly string _dirFileName = "TaskServiceBackgroundWork";
+
         public TaskServiceBackgroundWork(ITaskDataService taskService, IHubContext<SignalRHub> hubContext, IThirdPartyAPIOperater thirdPartyAPIOperater)
         {
             _taskDataService = taskService;
             _hubContext = hubContext;
             _thirdPartyAPIOperater = thirdPartyAPIOperater;
+            //_logger = log;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -63,6 +68,7 @@ namespace DeliverySystem.Module
                 catch(Exception ex)
                 {
                     var error = ex.ToString();
+                    //_logger.AddLog(error, $"{_dirFileName}_{DateTime.Now.ToString("yyyyMMddHHmmss")}");
                 }
             }
         }
@@ -88,10 +94,12 @@ namespace DeliverySystem.Module
                     {
                         TaskId = taskId,
                         ProcessingPercentage = 1,
-                        Status = status
+                        Status = status,
+                        Message = string.Empty
                     });
                 }
             }
+
             if(finisheTask.Count > 0)
             {
                 NotifyMutipleProcessingPercentage(finisheTask);
@@ -103,37 +111,51 @@ namespace DeliverySystem.Module
         {
             if (_taskDataService.TryDeququeWaitingToDoTaskSlaves(out var taskSlave))
             {
-                var rawShippingInformation = _taskDataService.GetRawShippingInformation(taskSlave.TaskSlave_Data);
-                var dataBaseShippingInformation = _taskDataService.GetShippingInformation(rawShippingInformation, taskSlave.TaskSlave_CreatedUser);
-                await _taskDataService.InsertShippingInformation(dataBaseShippingInformation);
+                try 
+                {
+                    var rawShippingInformation = _taskDataService.GetRawShippingInformation(taskSlave.TaskSlave_Data);
+                    var dataBaseShippingInformation = _taskDataService.GetShippingInformation(rawShippingInformation, taskSlave.TaskSlave_CreatedUser);
+                    await _taskDataService.InsertShippingInformation(dataBaseShippingInformation);
 
-                var label = _thirdPartyAPIOperater.GetLabel(rawShippingInformation);
-                var labelId = await _taskDataService.InsertShippingLabel(label);
-                if (labelId > 0)
-                {
-                    await _taskDataService.AddOrUpdateSuccessTask(taskSlave);
-                }
-                else
-                {
-                    await _taskDataService.AddOrUpdateFailTask(taskSlave);
-                }
+                    var label = _thirdPartyAPIOperater.GetLabel(rawShippingInformation);
+                    var labelId = await _taskDataService.InsertShippingLabel(label);
+                    if (labelId > 0)
+                    {
+                        await _taskDataService.AddOrUpdateSuccessTask(taskSlave);
+                    }
+                    else
+                    {
+                        await _taskDataService.AddOrUpdateFailTask(taskSlave);
+                    }
 
-                string status = _taskDataService.GetTaskStatus(taskSlave.TaskSlave_Id);
-                if (status == "Finish" || status == "Fail" || status == "PartialFail")
-                {
-                    await _taskDataService.RemoveFinishTask(taskSlave.TaskSlave_Id, status);
-                    NotifyProcessingPercentage(taskSlave.TaskSlave_Id, 1, status);
+                    string status = _taskDataService.GetTaskStatus(taskSlave.TaskSlave_Id);
+                    if (status == "Finish" || status == "Fail" || status == "PartialFail")
+                    {
+                        await _taskDataService.RemoveFinishTask(taskSlave.TaskSlave_Id, status);
+                        NotifyProcessingPercentage(taskSlave.TaskSlave_Id, 1, status);
+                    }
                 }
+                catch(Exception ex)
+                {
+                    var taskId = taskSlave.TaskSlave_TaskId;
+                    var successCount = _taskDataService.GetSuccessTaskCount(taskId);
+                    var totalCount = _taskDataService.GetTotalTaskCount(taskId);
+                    var status = _taskDataService.GetTaskStatus(taskId);
+                    var realStatus = status == "Processing" ? "Fail" : status;
+                    double pct = successCount / totalCount;
+                    NotifyProcessingPercentage(taskId, pct, realStatus, ex.ToString());
+                }                
             }
         }
 
-        private async void NotifyProcessingPercentage(long taskId, double percentage, string status)
+        private async void NotifyProcessingPercentage(long taskId, double percentage, string status, string message = "")
         {
             var notification = new List<ProcessingPercentageInfo>(){new ProcessingPercentageInfo()
                             {
                                 TaskId = taskId,
                                 ProcessingPercentage = percentage,
-                                Status = status
+                                Status = status,
+                                Message = message
                             }};
             string notifyMessage = JsonConvert.SerializeObject(notification);
             await _hubContext.Clients.All.SendAsync("ReceiveMessage", "Server", notifyMessage);

@@ -35,6 +35,9 @@ namespace DeliverySystem
             ITaskDataService taskService = new TaskDataService(repository);
             services.AddSingleton<ITaskDataService>(taskService);
 
+            //ILog log = new Logger();
+            //services.AddSingleton<ILog>(log);
+
             services.AddSignalR();
             services.AddControllers();
             services.AddHostedService<TaskServiceBackgroundWork>();

@@ -44,33 +44,31 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/shippinglabel/{originalTrackingNumber}")]
-        public async Task<IEnumerable<GetShippingLabelResponseEntity>> Get(string originalTrackingNumber)
+        public async Task<GetShippingLabelResponseEntity> Get(string originalTrackingNumber)
         {
             var rawLabels = await _repository.GetShippingLabel(originalTrackingNumber);
 
-            return rawLabels.Select(x => new GetShippingLabelResponseEntity()
+            return new GetShippingLabelResponseEntity()
             {
-                ShippingLabel_Id = x.ShippingLabel_Id,
-                ShippingLabel_BarCode = x.ShippingLabel_BarCode,
-                ShippingLabel_SalesOffice = x.ShippingLabel_SalesOffice,
-                ShippingLabel_ZipCode = x.ShippingLabel_ZipCode,
-                ShippingLabel_ZipCodeVersion = x.ShippingLabel_ZipCodeVersion,
-                ShippingLabel_PakageSize = x.ShippingLabel_PakageSize,
-                ShippingLabel_CreatedDateTime = x.ShippingLabel_CreatedDateTime,
-               ShippingLabel_EstimatedDeliveryDateTime = x.ShippingLabel_EstimatedDeliveryDateTime,
-               ShippingLabel_CustomID = x.ShippingLabel_CustomID,
-               ShippingLabel_ShippingOriginalTrackingNumber = x.ShippingLabel_ShippingOriginalTrackingNumber,
-               ShippingLabel_ShippingCollectedMoney = x.ShippingLabel_ShippingCollectedMoney,
-               ShippingLabel_ShippingRecipientAddress = x.ShippingLabel_ShippingRecipientAddress,
-               ShippingLabel_ShippingRecipientName = x.ShippingLabel_ShippingRecipientName,
-               ShippingLabel_ShippingRecipientPhoneNumber = x.ShippingLabel_ShippingRecipientPhoneNumber,
-               ShippingLabel_ShippingSenderAddress =x.ShippingLabel_ShippingSenderAddress,
-               ShippingLabel_ShippingSenderCompany = x.ShippingLabel_ShippingSenderCompany,
-               ShippingLabel_ShippingSenderName = x.ShippingLabel_ShippingSenderName,
-               ShippingLabel_ShippingSenderPhoneNumber = x.ShippingLabel_ShippingSenderPhoneNumber
-
-
-            }).ToArray();
+                ShippingLabel_Id = rawLabels.ShippingLabel_Id,
+                ShippingLabel_BarCode = rawLabels.ShippingLabel_BarCode,
+                ShippingLabel_SalesOffice = rawLabels.ShippingLabel_SalesOffice,
+                ShippingLabel_ZipCode = rawLabels.ShippingLabel_ZipCode,
+                ShippingLabel_ZipCodeVersion = rawLabels.ShippingLabel_ZipCodeVersion,
+                ShippingLabel_PakageSize = rawLabels.ShippingLabel_PakageSize,
+                ShippingLabel_CreatedDateTime = rawLabels.ShippingLabel_CreatedDateTime,
+               ShippingLabel_EstimatedDeliveryDateTime = rawLabels.ShippingLabel_EstimatedDeliveryDateTime,
+               ShippingLabel_CustomID = rawLabels.ShippingLabel_CustomID,
+               ShippingLabel_ShippingOriginalTrackingNumber = rawLabels.ShippingLabel_ShippingOriginalTrackingNumber,
+               ShippingLabel_ShippingCollectedMoney = rawLabels.ShippingLabel_ShippingCollectedMoney,
+               ShippingLabel_ShippingRecipientAddress = rawLabels.ShippingLabel_ShippingRecipientAddress,
+               ShippingLabel_ShippingRecipientName = rawLabels.ShippingLabel_ShippingRecipientName,
+               ShippingLabel_ShippingRecipientPhoneNumber = rawLabels.ShippingLabel_ShippingRecipientPhoneNumber,
+               ShippingLabel_ShippingSenderAddress =rawLabels.ShippingLabel_ShippingSenderAddress,
+               ShippingLabel_ShippingSenderCompany = rawLabels.ShippingLabel_ShippingSenderCompany,
+               ShippingLabel_ShippingSenderName = rawLabels.ShippingLabel_ShippingSenderName,
+               ShippingLabel_ShippingSenderPhoneNumber = rawLabels.ShippingLabel_ShippingSenderPhoneNumber
+            };
         }
 
         /// <summary>

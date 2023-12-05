@@ -38,13 +38,13 @@ namespace DeliverySystem.Module
             ConcurrentBag<TaskSlave> waitingToDoTaskSlave = new ConcurrentBag<TaskSlave>();
             var task = new TaskObject()
             {
-                Task_CreatedDateTime = DateTime.Now,
+                Task_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
                 Task_CreatedUser = data.User,
                 Task_IsDeleted = false,
                 Task_Status = "Ready",
-                Task_StatusUpdatedDateTime = DateTime.Now,
+                Task_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
                 Task_UpdatedUser = data.User,
-                Task_UpdatedDateTime = DateTime.Now,
+                Task_UpdatedDateTime = DateTime.UtcNow.GetTWTime(),
             };
 
             var taskId = await _repository.InsertTask(task);
@@ -69,14 +69,14 @@ namespace DeliverySystem.Module
                                        var taskSlave = new TaskSlave()
                                        {
                                            TaskSlave_TaskId = taskId,
-                                           TaskSlave_CreatedDateTime = DateTime.Now,
+                                           TaskSlave_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
                                            TaskSlave_CreatedUser = data.User,
                                            TaskSlave_Data = JsonConvert.SerializeObject(taskSlaveData),
                                            TaskSlave_IsDeleted = false,
                                            TaskSlave_Status = "Ready",
-                                           TaskSlave_StatusUpdatedDateTime = DateTime.Now,
+                                           TaskSlave_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
                                            TaskSlave_UpdatedUser = data.User,
-                                           TaskSlave_UpdatedDateTime = DateTime.Now
+                                           TaskSlave_UpdatedDateTime = DateTime.UtcNow.GetTWTime()
                                        };
                                    
                                        var taskSlaveId = await _repository.InsertTaskSlave(taskSlave);
@@ -159,9 +159,9 @@ namespace DeliverySystem.Module
             return new ShippingInformation()
             {
                 ShippingInformation_TrackingNumber  = rawData.ShippingInformation_TrackingNumber,
-                ShippingInformation_CollectedFee = rawData.ShippingInformation_CollectedFee,
-                ShippingInformation_CollectedMoney = rawData.ShippingInformation_CollectedMoney,
-                ShippingInformation_CreatedDateTime = DateTime.Now,
+                ShippingInformation_CollectedFee = rawData.ShippingInformation_CollectedFee??0,
+                ShippingInformation_CollectedMoney = rawData.ShippingInformation_CollectedMoney??0,
+                ShippingInformation_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
                 ShippingInformation_IsDeleted = false,
                 ShippingInformation_Memo = rawData.ShippingInformation_Memo,
                 ShippingInformation_OriginalTrackingNumber = rawData.ShippingInformation_OriginalTrackingNumber,
@@ -180,12 +180,12 @@ namespace DeliverySystem.Module
                 ShippingInformation_SiteName = rawData.ShippingInformation_SiteName,
                 ShippingInformation_SlaveTrackingNumber =  rawData.ShippingInformation_SlaveTrackingNumber,
                 ShippingInformation_Status = "Processing",
-                ShippingInformation_StatusUpdatedDateTime = DateTime.Now,
-                ShippingInformation_Tax = rawData.ShippingInformation_Tax,
-                ShippingInformation_TotalCount = rawData.ShippingInformation_TotalCount,
+                ShippingInformation_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
+                ShippingInformation_Tax = rawData.ShippingInformation_Tax??0,
+                ShippingInformation_TotalCount = rawData.ShippingInformation_TotalCount??0,
                 ShippingInformation_UnionContractId = rawData.ShippingInformation_UnionContractId,
                 ShippingInformation_UnionTrackingNumber= rawData.ShippingInformation_UnionTrackingNumber,
-                ShippingInformation_Weight = rawData.ShippingInformation_Weight,
+                ShippingInformation_Weight = rawData.ShippingInformation_Weight??0,
                 ShippingInformation_CreatedUser = createdUser
             };
         }
