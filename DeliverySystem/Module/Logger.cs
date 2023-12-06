@@ -1,4 +1,5 @@
 ﻿using DeliverySystem.Interface;
+using DeliverySystem.Variables.Repository;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,17 +13,14 @@ namespace DeliverySystem.Module
 {
     public class Logger : ILog
     {
+        private readonly IRepositoryOperater _repositoryOperater;
+
         /// <summary>
         /// 建構子
         /// </summary>
-        public Logger()
+        public Logger(IRepositoryOperater repositoryOperater)
         {
-
-            rootName = @".\log";
-            if (!Directory.Exists(rootName))
-            {
-                Directory.CreateDirectory(rootName);
-            }
+            _repositoryOperater = repositoryOperater;
 
             writeLogTimer = new Timer(new TimerCallback(this.timerWriteLog), null, 0, Timeout.Infinite);
         }
@@ -37,7 +35,7 @@ namespace DeliverySystem.Module
         /// <summary>
         /// 需要被寫入的log
         /// </summary>
-        private ConcurrentDictionary<string, ConcurrentQueue<string>> logsNeedToWrite = new ConcurrentDictionary<string, ConcurrentQueue<string>>();
+        private ConcurrentQueue<LogInformation> logsNeedToWrite = new ConcurrentQueue<LogInformation>();
 
         /// <summary>
         /// 間隔1秒
@@ -48,12 +46,6 @@ namespace DeliverySystem.Module
         /// 最大批次寫入資料筆數(先設10000筆看看)
         /// </summary>
         private const int MAX_ROWS_OF_WRITE_TO_LOGFILE = 10000;
-
-        /// <summary>
-        /// 放Log的根資料夾
-        /// </summary>
-        private string rootName = @".\log";
-
        
 
         #endregion
@@ -63,20 +55,9 @@ namespace DeliverySystem.Module
         /// </summary>
         /// <param name="content">log內容</param>
         ///  <param name="dirName">資料夾名稱</param>
-        public void AddLog(string content, string dirName)
+        public void AddLog(LogInformation content)
         {
-            logsNeedToWrite.AddOrUpdate(dirName,
-                newValue =>
-                {
-                    var log = new ConcurrentQueue<string>();
-                    log.Enqueue(content);
-                    return log;
-                },
-                (key, existingValue) =>
-                {
-                    existingValue.Enqueue(content);
-                    return existingValue;
-                });
+            logsNeedToWrite.Enqueue(content);
         }
 
         /// <summary>
@@ -87,39 +68,17 @@ namespace DeliverySystem.Module
         {
             string path = string.Empty;
 
-            foreach (KeyValuePair<string, ConcurrentQueue<string>> keyValuePair in logsNeedToWrite)
+            while (logsNeedToWrite.TryDequeue(out var content))
             {
-                path = $"{rootName}\\{keyValuePair.Key}";
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                }
-
+                
                 try
                 {
-                    using (FileStream fs = new FileStream($"{path}\\{DateTime.Now:yyyy-MM-dd}.log", FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
-                    {
-                        using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
-                        {
-                            for (int i = 0; i < MAX_ROWS_OF_WRITE_TO_LOGFILE; i++)
-                            {
-                                if (keyValuePair.Value.TryDequeue(out string content))
-                                {
-                                    sw.WriteLine(content);
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                            }
-
-
-                        }
-                    }
+                    _repositoryOperater.InsertLog(content);
                 }
-                catch
+                catch(Exception ex) 
                 {
-
+                    //todo
+                    var err= ex.ToString();
                 }
             }
         }
@@ -129,9 +88,8 @@ namespace DeliverySystem.Module
         /// </summary>
         /// <param name="item"></param>
         private void timerWriteLog(object item)
-        {
-            int logCount = logsNeedToWrite.Values.Sum(x => x.Count);
-            if (logCount > 0)
+        {            
+            if (logsNeedToWrite.Count > 0)
             {
                 try
                 {

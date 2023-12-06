@@ -31,12 +31,12 @@ namespace DeliverySystem
 
             IThirdPartyAPIOperater thirdPartyAPIOperater = new ThirdPartyAPIService();
             services.AddSingleton<IThirdPartyAPIOperater>(thirdPartyAPIOperater);
+            
+            ILog log = new Logger(repository);
+            services.AddSingleton<ILog>(log);
 
-            ITaskDataService taskService = new TaskDataService(repository);
+            ITaskDataService taskService = new TaskDataService(repository, log);
             services.AddSingleton<ITaskDataService>(taskService);
-
-            //ILog log = new Logger();
-            //services.AddSingleton<ILog>(log);
 
             services.AddSignalR();
             services.AddControllers();
@@ -77,19 +77,8 @@ namespace DeliverySystem
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-            }
+            }            
 
-            //app.UseHttpsRedirection();
-
-            // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
-
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.)
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Delivery System V1 API");
-            });
-            
             app.UseCors(builder =>
             {
                 builder.AllowAnyHeader()
@@ -108,7 +97,16 @@ namespace DeliverySystem
                 endpoints.MapHub<SignalRHub>("/chatHub");
             });
 
-           
+            app.UseRequestLog();
+
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.)
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Delivery System V1 API");
+            });
         }
     }
 }

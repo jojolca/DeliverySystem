@@ -16,10 +16,12 @@ namespace DeliverySystem.Interface
 
         Task<long> InsertShippingInformation(ShippingInformation shippingInformation);
 
+        Task<long> InsertLog(LogInformation log);
+
         Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber);
 
         Task<bool> UpdateTaskStatus(string status, long id);
 
-        Task<bool> UpdateTaskSlaveStatus(string status, long id);
+        Task<bool> UpdateTaskSlaveStatus(string status, long id);        
     }
 }

@@ -1,9 +1,10 @@
 ﻿using System.Text.Json.Serialization;
 using System;
+using DeliverySystem.Variables.BaseObject;
 
 namespace DeliverySystem.Variables.Example
 {
-    public class GetShippingLabelResponseEntity
+    public class GetShippingLabelResponseEntity : ResponseBase
     {
         [JsonPropertyName("id")]
         public long ShippingLabel_Id { get; set; }

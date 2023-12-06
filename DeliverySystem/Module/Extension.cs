@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace DeliverySystem.Module
@@ -9,9 +10,10 @@ namespace DeliverySystem.Module
     {
         public static DateTime GetTWTime(this DateTime utcTime)
         {
-            var twtzinfo = TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time");
+            string id = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Taipei Standard Time" : "Asia/Taipei";
+            TimeZoneInfo twtzinfo = TimeZoneInfo.FindSystemTimeZoneById(id);
 
-           return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, twtzinfo);
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, twtzinfo);
         }
 
     }

@@ -19,16 +19,16 @@ namespace DeliverySystem.Module
 
         private readonly IThirdPartyAPIOperater _thirdPartyAPIOperater;
 
-        //private readonly ILog _logger;
+        private readonly ILog _logger;
 
         private readonly string _dirFileName = "TaskServiceBackgroundWork";
 
-        public TaskServiceBackgroundWork(ITaskDataService taskService, IHubContext<SignalRHub> hubContext, IThirdPartyAPIOperater thirdPartyAPIOperater)
+        public TaskServiceBackgroundWork(ITaskDataService taskService, IHubContext<SignalRHub> hubContext, IThirdPartyAPIOperater thirdPartyAPIOperater, ILog log)
         {
             _taskDataService = taskService;
             _hubContext = hubContext;
             _thirdPartyAPIOperater = thirdPartyAPIOperater;
-            //_logger = log;
+            _logger = log;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,44 +67,65 @@ namespace DeliverySystem.Module
                 }
                 catch(Exception ex)
                 {
-                    var error = ex.ToString();
-                    //_logger.AddLog(error, $"{_dirFileName}_{DateTime.Now.ToString("yyyyMMddHHmmss")}");
+                    var log = new LogInformation()
+                    {
+                        ObjectType = "TaskServiceBackgroundWork_ExecuteAsync",
+                        LogType = "Error",
+                        Message = ex.ToString(),
+                        IsDeleted = false,
+                        CreatedDateTime = DateTime.UtcNow.GetTWTime()
+                    };
+                    _logger.AddLog(log);
                 }
             }
         }
 
         public async Task NotifyTaskProcessingPercentage()
         {
-            var keys = _taskDataService.GetProcessingTaskKeys();
-            List<ProcessingPercentageInfo> finisheTask = new List<ProcessingPercentageInfo>();
-            foreach (var taskId in keys)
+            try 
             {
-                var successCount = _taskDataService.GetSuccessTaskCount(taskId);
-                var totalCount = _taskDataService.GetTotalTaskCount(taskId);
-                var status = _taskDataService.GetTaskStatus(taskId);
-                if (status == "Processing")
+                var keys = _taskDataService.GetProcessingTaskKeys();
+                List<ProcessingPercentageInfo> finisheTask = new List<ProcessingPercentageInfo>();
+                foreach (var taskId in keys)
                 {
-                    double pct = successCount / totalCount;
-                    NotifyProcessingPercentage(taskId, pct, status);
-                }
-                else
-                {
-                    await _taskDataService.RemoveFinishTask(taskId, status);
-                    finisheTask.Add(new ProcessingPercentageInfo() 
+                    var successCount = _taskDataService.GetSuccessTaskCount(taskId);
+                    var totalCount = _taskDataService.GetTotalTaskCount(taskId);
+                    var status = _taskDataService.GetTaskStatus(taskId);
+                    if (status == "Processing")
                     {
-                        TaskId = taskId,
-                        ProcessingPercentage = 1,
-                        Status = status,
-                        Message = string.Empty
-                    });
+                        double pct = successCount / totalCount;
+                        NotifyProcessingPercentage(taskId, pct, status);
+                    }
+                    else
+                    {
+                        await _taskDataService.RemoveFinishTask(taskId, status);
+                        finisheTask.Add(new ProcessingPercentageInfo()
+                        {
+                            TaskId = taskId,
+                            ProcessingPercentage = 1,
+                            Status = status,
+                            Message = string.Empty
+                        });
+                    }
+                }
+
+                if (finisheTask.Count > 0)
+                {
+                    NotifyMutipleProcessingPercentage(finisheTask);
                 }
             }
-
-            if(finisheTask.Count > 0)
+            catch(Exception ex)
             {
-                NotifyMutipleProcessingPercentage(finisheTask);
-            }
-            
+                var log = new LogInformation()
+                {
+                    ObjectType = "TaskServiceBackgroundWork_NotifyTaskProcessingPercentage",
+                    LogType = "Error",
+                    Message = ex.ToString(),
+                    IsDeleted = false,
+                    CreatedDateTime = DateTime.UtcNow.GetTWTime()
+                };
+                _logger.AddLog(log);
+            }            
         }
 
         public async Task GetLabel()
@@ -137,13 +158,23 @@ namespace DeliverySystem.Module
                 }
                 catch(Exception ex)
                 {
+                    var log = new LogInformation()
+                    {
+                        ObjectType = "TaskServiceBackgroundWork_GetLabel",
+                        LogType = "Error",
+                        Message = ex.ToString(),
+                        IsDeleted = false,
+                        CreatedDateTime = DateTime.UtcNow.GetTWTime()
+                    };
+                    _logger.AddLog(log);
+
                     var taskId = taskSlave.TaskSlave_TaskId;
                     var successCount = _taskDataService.GetSuccessTaskCount(taskId);
                     var totalCount = _taskDataService.GetTotalTaskCount(taskId);
                     var status = _taskDataService.GetTaskStatus(taskId);
                     var realStatus = status == "Processing" ? "Fail" : status;
                     double pct = successCount / totalCount;
-                    NotifyProcessingPercentage(taskId, pct, realStatus, ex.ToString());
+                    NotifyProcessingPercentage(taskId, pct, realStatus, "取得列印標籤資料發生異常!");
                 }                
             }
         }

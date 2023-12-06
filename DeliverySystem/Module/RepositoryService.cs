@@ -5,6 +5,7 @@ using DeliverySystem.Interface;
 using DeliverySystem.Variables.Repository;
 using Dapper;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace DeliverySystem.Module
 {
@@ -49,7 +50,7 @@ namespace DeliverySystem.Module
         /// <returns></returns>
         public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
         {
-            ShippingLabel? resutlt = new ShippingLabel();
+            ShippingLabel resutlt = new ShippingLabel();
 
             string cmd = $@"select * 
                             from [ExampleDB].[dbo].[ShippingLabel](NOLOCK)
@@ -59,8 +60,8 @@ namespace DeliverySystem.Module
             using (var sqlConnection = new SqlConnection(ConnectionString))
             {
                 sqlConnection.Open();
-                resutlt = await sqlConnection.QueryFirstOrDefault(cmd, new { originalTrackingNumber }) ;
-                
+                var multipleResult = await sqlConnection.QueryAsync<ShippingLabel>(cmd, new { originalTrackingNumber });
+                resutlt = multipleResult.AsEnumerable().FirstOrDefault();
             }
 
             return resutlt;
@@ -265,6 +266,30 @@ namespace DeliverySystem.Module
             }
 
             return shippingInformationId;
+        }
+
+        public async Task<long> InsertLog(LogInformation log)
+        {
+            long Id = 0;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+                Id = await connection.ExecuteScalarAsync<long>(@"INSERT INTO [dbo].[LogInformation]
+                                                                                       ([LogInformation_ObjectType]
+                                                                                       ,[LogInformation_LogType]
+                                                                                       ,[LogInformation_Message]
+                                                                                       ,[LogInformation_CreatedDateTime]
+                                                                                       ,[LogInformation_IsDeleted])
+                                                                                 VALUES
+                                                                                       (@ObjectType
+                                                                                       ,@LogType
+                                                                                       ,@Message
+                                                                                       ,@CreatedDateTime
+                                                                                       ,@IsDeleted)
+                                                                            SELECT SCOPE_IDENTITY()", log);
+            }
+
+            return Id;
         }
 
         public async Task<bool> UpdateShippingInformationStatus(string status, long id)

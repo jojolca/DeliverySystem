@@ -27,91 +27,112 @@ namespace DeliverySystem.Module
 
         private ConcurrentDictionary<long, ConcurrentQueue<TaskSlave>> _failTaskSlaves = new ConcurrentDictionary<long, ConcurrentQueue<TaskSlave>>();
 
-        public TaskDataService(IRepositoryOperater repositoryOperater)
+        private readonly ILog _logger;
+
+        public TaskDataService(IRepositoryOperater repositoryOperater, ILog log)
         {
             _repository = repositoryOperater;
+            _logger = log;
         }
 
         public async Task<long> CreateTasks(CreateTaskRequestEntity data)
         {
-            ConcurrentBag<TaskSlave> failedTaskSlave = new ConcurrentBag<TaskSlave>();
-            ConcurrentBag<TaskSlave> waitingToDoTaskSlave = new ConcurrentBag<TaskSlave>();
-            var task = new TaskObject()
-            {
-                Task_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
-                Task_CreatedUser = data.User,
-                Task_IsDeleted = false,
-                Task_Status = "Ready",
-                Task_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
-                Task_UpdatedUser = data.User,
-                Task_UpdatedDateTime = DateTime.UtcNow.GetTWTime(),
-            };
+            long taskId = 0;
 
-            var taskId = await _repository.InsertTask(task);
-
-            if(taskId > 0)
+            try 
             {
-                task.Task_Id = taskId;
-                if(_processingTasks.TryAdd(taskId, data.RowData.Count) == false)
+                ConcurrentBag<TaskSlave> failedTaskSlave = new ConcurrentBag<TaskSlave>();
+                ConcurrentBag<TaskSlave> waitingToDoTaskSlave = new ConcurrentBag<TaskSlave>();
+                var task = new TaskObject()
                 {
-                    //delete database task
+                    Task_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
+                    Task_CreatedUser = data.User,
+                    Task_IsDeleted = false,
+                    Task_Status = "Ready",
+                    Task_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
+                    Task_UpdatedUser = data.User,
+                    Task_UpdatedDateTime = DateTime.UtcNow.GetTWTime(),
+                };
+
+                taskId = await _repository.InsertTask(task);
+
+                if (taskId > 0)
+                {
+                    task.Task_Id = taskId;
+                    if (_processingTasks.TryAdd(taskId, data.RowData.Count) == false)
+                    {
+                        //delete database task
+                        return 0;
+                    }
+
+                    var rowDataTasks = data.RowData.Select(row => Task.Run(async () =>
+                    {
+                        var taskSlaveData = new TaskSlaveData()
+                        {
+                            Column = data.Column,
+                            RowData = row,
+                        };
+
+                        var taskSlave = new TaskSlave()
+                        {
+                            TaskSlave_TaskId = taskId,
+                            TaskSlave_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
+                            TaskSlave_CreatedUser = data.User,
+                            TaskSlave_Data = JsonConvert.SerializeObject(taskSlaveData),
+                            TaskSlave_IsDeleted = false,
+                            TaskSlave_Status = "Ready",
+                            TaskSlave_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
+                            TaskSlave_UpdatedUser = data.User,
+                            TaskSlave_UpdatedDateTime = DateTime.UtcNow.GetTWTime()
+                        };
+
+                        var taskSlaveId = await _repository.InsertTaskSlave(taskSlave);
+                        if (taskSlaveId > 0)
+                        {
+                            taskSlave.TaskSlave_Id = taskSlaveId;
+                            waitingToDoTaskSlave.Add(taskSlave);
+                        }
+                        else
+                        {
+                            failedTaskSlave.Add(taskSlave);
+                        }
+
+                    })).ToList();
+
+                    await Task.WhenAll(rowDataTasks);
+                }
+                else
+                {
+                    // log 建立task失敗
                     return 0;
                 }
 
-                var rowDataTasks = data.RowData.Select( row => Task.Run(async()=>
-                                   {
-                                       var taskSlaveData = new TaskSlaveData()
-                                       {
-                                           Column = data.Column,
-                                           RowData = row,
-                                       };
-                                   
-                                       var taskSlave = new TaskSlave()
-                                       {
-                                           TaskSlave_TaskId = taskId,
-                                           TaskSlave_CreatedDateTime = DateTime.UtcNow.GetTWTime(),
-                                           TaskSlave_CreatedUser = data.User,
-                                           TaskSlave_Data = JsonConvert.SerializeObject(taskSlaveData),
-                                           TaskSlave_IsDeleted = false,
-                                           TaskSlave_Status = "Ready",
-                                           TaskSlave_StatusUpdatedDateTime = DateTime.UtcNow.GetTWTime(),
-                                           TaskSlave_UpdatedUser = data.User,
-                                           TaskSlave_UpdatedDateTime = DateTime.UtcNow.GetTWTime()
-                                       };
-                                   
-                                       var taskSlaveId = await _repository.InsertTaskSlave(taskSlave);
-                                       if (taskSlaveId > 0)
-                                       {
-                                           taskSlave.TaskSlave_Id = taskSlaveId;
-                                           waitingToDoTaskSlave.Add(taskSlave);
-                                       }
-                                       else
-                                       {
-                                           failedTaskSlave.Add(taskSlave);
-                                       }
-                                   
-                                   })).ToList();
+                if (failedTaskSlave.Count > 0)
+                {
+                    _processingTasks.TryRemove(taskId, out _);
+                    //Todo: delete task DB data、taskSlave DB data
+                    return 0;
+                }
 
-                await Task.WhenAll(rowDataTasks);
+                Parallel.ForEach(waitingToDoTaskSlave, slave =>
+                {
+                    //task建立正常，全部加入待處理中
+                    _waitingToDoTaskSlaves.Enqueue(slave);
+                });
             }
-            else 
+            catch (Exception ex) 
             {
-                // log 建立task失敗
-                return 0;
+                var log = new LogInformation()
+                {
+                    ObjectType = "TaskDataService_CreateTasks",
+                    LogType = "Error",
+                    Message = ex.ToString(),
+                    IsDeleted = false,
+                    CreatedDateTime = DateTime.UtcNow.GetTWTime()
+                };
+                _logger.AddLog(log);
             }
-
-            if(failedTaskSlave.Count > 0)
-            {
-                _processingTasks.TryRemove(taskId, out _);
-                //Todo: delete task DB data、taskSlave DB data
-                return 0;
-            }
-
-            Parallel.ForEach(waitingToDoTaskSlave, slave =>
-            {
-                //task建立正常，全部加入待處理中
-                _waitingToDoTaskSlaves.Enqueue(slave);
-            });
+            
             
             return taskId;
         }
@@ -253,7 +274,7 @@ namespace DeliverySystem.Module
 
         public async Task RemoveFinishTask(long taskId, string status)
         {
-            await _repository.UpdateTaskSlaveStatus(status, taskId);
+            await _repository.UpdateTaskStatus(status, taskId);
             _processingTasks.TryRemove(taskId, out _);
             _failTaskSlaves.TryRemove(taskId, out _);
             _successTaskSlaves.TryRemove(taskId, out _);
