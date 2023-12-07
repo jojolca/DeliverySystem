@@ -23,6 +23,13 @@ namespace DeliverySystem.Module
 
         private readonly string _dirFileName = "TaskServiceBackgroundWork";
 
+        /// <summary>
+        /// TaskServiceBackgroundWork
+        /// </summary>
+        /// <param name="taskService"></param>
+        /// <param name="hubContext"></param>
+        /// <param name="thirdPartyAPIOperater"></param>
+        /// <param name="log"></param>
         public TaskServiceBackgroundWork(ITaskDataService taskService, IHubContext<SignalRHub> hubContext, IThirdPartyAPIOperater thirdPartyAPIOperater, ILog log)
         {
             _taskDataService = taskService;
