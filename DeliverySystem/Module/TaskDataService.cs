@@ -29,6 +29,11 @@ namespace DeliverySystem.Module
 
         private readonly ILog _logger;
 
+        /// <summary>
+        /// TaskDataService
+        /// </summary>
+        /// <param name="repositoryOperater"></param>
+        /// <param name="log"></param>
         public TaskDataService(IRepositoryOperater repositoryOperater, ILog log)
         {
             _repository = repositoryOperater;
