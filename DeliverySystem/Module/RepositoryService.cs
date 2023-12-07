@@ -50,7 +50,7 @@ namespace DeliverySystem.Module
         /// <returns></returns>
         public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
         {
-            ShippingLabel resutlt = new ShippingLabel();
+            ShippingLabel resutlt = new ShippingLabel(); 
 
             string cmd = $@"select * 
                             from [ExampleDB].[dbo].[ShippingLabel](NOLOCK)
