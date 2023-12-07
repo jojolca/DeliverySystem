@@ -45,7 +45,7 @@ namespace DeliverySystem.Module
 
 
         /// <summary>
-        /// 取得所有配送標籤資料
+        /// 取得所有配送標籤資料 
         /// </summary>
         /// <returns></returns>
         public async Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber)
