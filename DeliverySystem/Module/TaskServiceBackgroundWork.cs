@@ -38,6 +38,11 @@ namespace DeliverySystem.Module
             _logger = log;
         }
 
+        /// <summary>
+        /// ExecuteAsync
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var longInterval = TimeSpan.FromMilliseconds(100); // 較長的時間間隔
