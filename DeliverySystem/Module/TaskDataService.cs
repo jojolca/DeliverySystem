@@ -40,6 +40,11 @@ namespace DeliverySystem.Module
             _logger = log;
         }
 
+        /// <summary>
+        /// CreateTasks
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public async Task<long> CreateTasks(CreateTaskRequestEntity data)
         {
             long taskId = 0;
