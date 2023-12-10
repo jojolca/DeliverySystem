@@ -62,8 +62,6 @@ namespace DeliverySystem.Module
                     }
 
                     isLongIntervalTask = !isLongIntervalTask;
-
-                    var tt = stoppingToken.IsCancellationRequested;
                 }
                 catch(Exception ex)
                 {
@@ -168,13 +166,8 @@ namespace DeliverySystem.Module
                     };
                     _logger.AddLog(log);
 
-                    var taskId = taskSlave.TaskSlave_TaskId;
-                    var successCount = _taskDataService.GetSuccessTaskCount(taskId);
-                    var totalCount = _taskDataService.GetTotalTaskCount(taskId);
-                    var status = _taskDataService.GetTaskStatus(taskId);
-                    var realStatus = status == "Processing" ? "Fail" : status;
-                    double pct = successCount / totalCount;
-                    NotifyProcessingPercentage(taskId, pct, realStatus, "取得列印標籤資料發生異常!");
+                    //// 資料執行失敗
+                    await _taskDataService.AddOrUpdateFailTask(taskSlave);
                 }                
             }
         }
