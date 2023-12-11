@@ -8,6 +8,7 @@ using DeliverySystem.Variables.Hub;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using DeliverySystem.Variables.Repository;
+using DeliverySystem.Validators;
 
 namespace DeliverySystem.Module
 {
@@ -133,26 +134,39 @@ namespace DeliverySystem.Module
                 try 
                 {
                     var rawShippingInformation = _taskDataService.GetRawShippingInformation(taskSlave.TaskSlave_Data);
-                    var dataBaseShippingInformation = _taskDataService.GetShippingInformation(rawShippingInformation, taskSlave.TaskSlave_CreatedUser);
-                    await _taskDataService.InsertShippingInformation(dataBaseShippingInformation);
-
-                    var label = _thirdPartyAPIOperater.GetLabel(rawShippingInformation);
-                    var labelId = await _taskDataService.InsertShippingLabel(label);
-                    if (labelId > 0)
+                    var validator = new RawShippingInformationValidator(rawShippingInformation);
+                    var errMessageOfVariableCheck = validator.Verify();
+                    if(string.IsNullOrEmpty(errMessageOfVariableCheck))
                     {
-                        await _taskDataService.AddOrUpdateSuccessTask(taskSlave);
+                        var dataBaseShippingInformation = _taskDataService.GetShippingInformation(rawShippingInformation, taskSlave.TaskSlave_CreatedUser);
+                        await _taskDataService.InsertShippingInformation(dataBaseShippingInformation);
+
+                        var label = _thirdPartyAPIOperater.GetLabel(rawShippingInformation);
+                        var labelId = await _taskDataService.InsertShippingLabel(label);
+                        if (labelId > 0)
+                        {
+                            await _taskDataService.AddOrUpdateSuccessTask(taskSlave);
+                        }
+                        else
+                        {
+                            taskSlave.TaskSlave_ErrorMsg = "取得標籤資料失敗";
+                            await _taskDataService.AddOrUpdateFailTask(taskSlave);
+                        }
+
+                        string status = _taskDataService.GetTaskStatus(taskSlave.TaskSlave_Id);
+                        if (status == "Finish" || status == "Fail" || status == "PartialFail")
+                        {
+                            await _taskDataService.RemoveFinishTask(taskSlave.TaskSlave_Id, status);
+                            NotifyProcessingPercentage(taskSlave.TaskSlave_Id, 1, status);
+                        }
                     }
                     else
                     {
+                        taskSlave.TaskSlave_ErrorMsg = errMessageOfVariableCheck;
                         await _taskDataService.AddOrUpdateFailTask(taskSlave);
                     }
 
-                    string status = _taskDataService.GetTaskStatus(taskSlave.TaskSlave_Id);
-                    if (status == "Finish" || status == "Fail" || status == "PartialFail")
-                    {
-                        await _taskDataService.RemoveFinishTask(taskSlave.TaskSlave_Id, status);
-                        NotifyProcessingPercentage(taskSlave.TaskSlave_Id, 1, status);
-                    }
+                   
                 }
                 catch(Exception ex)
                 {
@@ -167,6 +181,7 @@ namespace DeliverySystem.Module
                     _logger.AddLog(log);
 
                     //// 資料執行失敗
+                    taskSlave.TaskSlave_ErrorMsg = $"發生非預期錯誤，錯誤訊息:{ex.ToString()}";
                     await _taskDataService.AddOrUpdateFailTask(taskSlave);
                 }                
             }

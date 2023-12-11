@@ -22,6 +22,6 @@ namespace DeliverySystem.Interface
 
         Task<bool> UpdateTaskStatus(string status, long id);
 
-        Task<bool> UpdateTaskSlaveStatus(string status, long id);        
+        Task<bool> UpdateTaskSlaveStatus(string status, long id, string message);        
     }
 }

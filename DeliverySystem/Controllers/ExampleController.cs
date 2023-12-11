@@ -99,18 +99,18 @@ namespace DeliverySystem.Controllers
             }
             else
             {
-                return BadRequest(new CreateTaskResponseEntitycs() { Status = 0 });
+                return BadRequest(new CreateTaskResponseEntitycs() { Status = 0, Message ="Task建立失敗" });
             }
         }
 
-        ///// <summary>
-        ///// Send Message
-        ///// </summary>
-        ///// <returns></returns>
-        //[HttpPost("/SendMsg/{msg}")]
-        //public async Task Post(string msg)
-        //{
-        //    await _taskService.SendMsg(msg, "server");
-        //}
+        /// <summary>
+        /// Get TaskSlave 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("/getTaskSlaveList/{taskId}")]
+        public async Task<ActionResult<GetShippingLabelResponseEntity>> Get(long taskId)
+        {
+
+        }
     }
 }

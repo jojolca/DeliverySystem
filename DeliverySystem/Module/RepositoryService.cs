@@ -352,7 +352,7 @@ namespace DeliverySystem.Module
             return effectiveRows == 1;
         }
 
-        public async Task<bool> UpdateTaskSlaveStatus(string status, long id)
+        public async Task<bool> UpdateTaskSlaveStatus(string status, long id, string message)
         {
             int effectiveRows = 0;
             using (var connection = new SqlConnection(ConnectionString))
@@ -366,8 +366,9 @@ namespace DeliverySystem.Module
                         effectiveRows = await connection.ExecuteScalarAsync<int>(@"Update [dbo].[TaskSlave]
                                                                Set [TaskSlave_Status] = @status
                                                                ,[TaskSlave_StatusUpdatedDateTime] = @updatedTime
+                                                               ,[TaskSlave_ErrorMsg] = @message
                                                                 where TaskSlave_Id = @id;
-                                                         SELECT @@ROWCOUNT", new { status, id, updatedTime = DateTime.UtcNow.GetTWTime() }, tran);
+                                                         SELECT @@ROWCOUNT", new { status, id, message, updatedTime = DateTime.UtcNow.GetTWTime() }, tran);
                         tran.Commit();
                     }
                     catch (Exception ex)
