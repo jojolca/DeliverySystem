@@ -8,6 +8,10 @@ namespace DeliverySystem.Interface
     {
         Task<IEnumerable<ShippingInformation>> GetShippingInformation();
 
+        Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber);
+
+        Task<IEnumerable<TaskSlave>> GetTaskSlave(long taskId);
+
         Task<long> InsertTask(TaskObject task);
 
         Task<long> InsertTaskSlave(TaskSlave taskSlave);
@@ -18,10 +22,8 @@ namespace DeliverySystem.Interface
 
         Task<long> InsertLog(LogInformation log);
 
-        Task<ShippingLabel> GetShippingLabel(string originalTrackingNumber);
-
         Task<bool> UpdateTaskStatus(string status, long id);
 
-        Task<bool> UpdateTaskSlaveStatus(string status, long id, string message);        
+        Task<bool> UpdateTaskSlave(string status, long id, string message);        
     }
 }

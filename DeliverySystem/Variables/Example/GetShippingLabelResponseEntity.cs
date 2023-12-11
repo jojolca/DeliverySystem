@@ -4,7 +4,7 @@ using DeliverySystem.Variables.BaseObject;
 
 namespace DeliverySystem.Variables.Example
 {
-    public class GetShippingLabelResponseEntity : ResponseBase
+    public class GetShippingLabelResponseEntity 
     {
         [JsonPropertyName("id")]
         public long ShippingLabel_Id { get; set; }

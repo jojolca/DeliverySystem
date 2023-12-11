@@ -10,7 +10,7 @@ namespace DeliverySystem.Variables.Example
     /// <summary>
     /// Create Task Response
     /// </summary>
-    public class CreateTaskResponseEntitycs : ResponseBase
+    public class CreateTaskResponseEntitycs
     {
         /// <summary>
         /// Task Id

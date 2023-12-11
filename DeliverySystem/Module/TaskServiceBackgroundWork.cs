@@ -164,9 +164,7 @@ namespace DeliverySystem.Module
                     {
                         taskSlave.TaskSlave_ErrorMsg = errMessageOfVariableCheck;
                         await _taskDataService.AddOrUpdateFailTask(taskSlave);
-                    }
-
-                   
+                    }                   
                 }
                 catch(Exception ex)
                 {
@@ -181,7 +179,7 @@ namespace DeliverySystem.Module
                     _logger.AddLog(log);
 
                     //// 資料執行失敗
-                    taskSlave.TaskSlave_ErrorMsg = $"發生非預期錯誤，錯誤訊息:{ex.ToString()}";
+                    taskSlave.TaskSlave_ErrorMsg = $"發生非預期錯誤，錯誤訊息:{ex}";
                     await _taskDataService.AddOrUpdateFailTask(taskSlave);
                 }                
             }

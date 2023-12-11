@@ -7,6 +7,7 @@ using DeliverySystem.Variables.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,9 +37,13 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/shippinginformation")]
-        public async Task<IEnumerable<ShippingInformation>> Get()
+        public async Task<ActionResult<Response<IEnumerable<ShippingInformation>>>> Get()
         {
-            return await _repository.GetShippingInformation();
+            var data = await _repository.GetShippingInformation();
+            return Ok(new Response<IEnumerable<ShippingInformation>>()
+            {
+                Data = data
+            });
         }
 
         /// <summary>
@@ -46,37 +51,44 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/shippinglabel/{originalTrackingNumber}")]
-        public async Task<ActionResult<GetShippingLabelResponseEntity>> Get(string originalTrackingNumber)
+        public async Task<ActionResult<Response<GetShippingLabelResponseEntity>>> Get(string originalTrackingNumber)
         {
             var rawLabels = await _repository.GetShippingLabel(originalTrackingNumber);
 
             if(rawLabels != null)
             {
-                return new GetShippingLabelResponseEntity()
+                return Ok(new Response<GetShippingLabelResponseEntity>()
                 {
-                    ShippingLabel_Id = rawLabels.ShippingLabel_Id,
-                    ShippingLabel_BarCode = rawLabels.ShippingLabel_BarCode,
-                    ShippingLabel_SalesOffice = rawLabels.ShippingLabel_SalesOffice,
-                    ShippingLabel_ZipCode = rawLabels.ShippingLabel_ZipCode,
-                    ShippingLabel_ZipCodeVersion = rawLabels.ShippingLabel_ZipCodeVersion,
-                    ShippingLabel_PakageSize = rawLabels.ShippingLabel_PakageSize,
-                    ShippingLabel_CreatedDateTime = rawLabels.ShippingLabel_CreatedDateTime,
-                    ShippingLabel_EstimatedDeliveryDateTime = rawLabels.ShippingLabel_EstimatedDeliveryDateTime,
-                    ShippingLabel_CustomID = rawLabels.ShippingLabel_CustomID,
-                    ShippingLabel_ShippingOriginalTrackingNumber = rawLabels.ShippingLabel_ShippingOriginalTrackingNumber,
-                    ShippingLabel_ShippingCollectedMoney = rawLabels.ShippingLabel_ShippingCollectedMoney,
-                    ShippingLabel_ShippingRecipientAddress = rawLabels.ShippingLabel_ShippingRecipientAddress,
-                    ShippingLabel_ShippingRecipientName = rawLabels.ShippingLabel_ShippingRecipientName,
-                    ShippingLabel_ShippingRecipientPhoneNumber = rawLabels.ShippingLabel_ShippingRecipientPhoneNumber,
-                    ShippingLabel_ShippingSenderAddress = rawLabels.ShippingLabel_ShippingSenderAddress,
-                    ShippingLabel_ShippingSenderCompany = rawLabels.ShippingLabel_ShippingSenderCompany,
-                    ShippingLabel_ShippingSenderName = rawLabels.ShippingLabel_ShippingSenderName,
-                    ShippingLabel_ShippingSenderPhoneNumber = rawLabels.ShippingLabel_ShippingSenderPhoneNumber
-                };
+                    Data = new GetShippingLabelResponseEntity()
+                    {
+                        ShippingLabel_Id = rawLabels.ShippingLabel_Id,
+                        ShippingLabel_BarCode = rawLabels.ShippingLabel_BarCode,
+                        ShippingLabel_SalesOffice = rawLabels.ShippingLabel_SalesOffice,
+                        ShippingLabel_ZipCode = rawLabels.ShippingLabel_ZipCode,
+                        ShippingLabel_ZipCodeVersion = rawLabels.ShippingLabel_ZipCodeVersion,
+                        ShippingLabel_PakageSize = rawLabels.ShippingLabel_PakageSize,
+                        ShippingLabel_CreatedDateTime = rawLabels.ShippingLabel_CreatedDateTime,
+                        ShippingLabel_EstimatedDeliveryDateTime = rawLabels.ShippingLabel_EstimatedDeliveryDateTime,
+                        ShippingLabel_CustomID = rawLabels.ShippingLabel_CustomID,
+                        ShippingLabel_ShippingOriginalTrackingNumber = rawLabels.ShippingLabel_ShippingOriginalTrackingNumber,
+                        ShippingLabel_ShippingCollectedMoney = rawLabels.ShippingLabel_ShippingCollectedMoney,
+                        ShippingLabel_ShippingRecipientAddress = rawLabels.ShippingLabel_ShippingRecipientAddress,
+                        ShippingLabel_ShippingRecipientName = rawLabels.ShippingLabel_ShippingRecipientName,
+                        ShippingLabel_ShippingRecipientPhoneNumber = rawLabels.ShippingLabel_ShippingRecipientPhoneNumber,
+                        ShippingLabel_ShippingSenderAddress = rawLabels.ShippingLabel_ShippingSenderAddress,
+                        ShippingLabel_ShippingSenderCompany = rawLabels.ShippingLabel_ShippingSenderCompany,
+                        ShippingLabel_ShippingSenderName = rawLabels.ShippingLabel_ShippingSenderName,
+                        ShippingLabel_ShippingSenderPhoneNumber = rawLabels.ShippingLabel_ShippingSenderPhoneNumber
+                    }
+                });
             }
             else
             {
-                return BadRequest(new GetShippingLabelResponseEntity() { Message = "查無對應資料!"});
+                return BadRequest(new Response<GetShippingLabelResponseEntity>()
+                { 
+                    Data = new GetShippingLabelResponseEntity(),
+                    Message = "查無對應資料!"
+                });
             }
            
         }
@@ -86,20 +98,27 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <param name="request">Task Data</param>
         [HttpPost("/createTask")]
-        public async Task<ActionResult<CreateTaskResponseEntitycs>> Post(CreateTaskRequestEntity request)
+        public async Task<ActionResult<Response<CreateTaskResponseEntitycs>>> Post(CreateTaskRequestEntity request)
         {
             var taskId = await _taskService.CreateTasks(request);
             if (taskId > 0)
             {
-                return Ok(new CreateTaskResponseEntitycs()
+                return Ok(new Response<CreateTaskResponseEntitycs>()
                 {
-                    TaskId = taskId,
-                    Status = 1
+                    Data = new CreateTaskResponseEntitycs()
+                    {
+                        TaskId = taskId,
+                        Status = 1
+                    }
                 });
             }
             else
             {
-                return BadRequest(new CreateTaskResponseEntitycs() { Status = 0, Message ="Task建立失敗" });
+                return BadRequest(new Response<CreateTaskResponseEntitycs>()
+                {
+                    Data = new CreateTaskResponseEntitycs() { Status = 0 },                    
+                    Message = "Task建立失敗"
+                });
             }
         }
 
@@ -108,8 +127,35 @@ namespace DeliverySystem.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/getTaskSlaveList/{taskId}")]
-        public async Task<ActionResult<GetShippingLabelResponseEntity>> Get(long taskId)
+        public async Task<ActionResult<Response<IEnumerable<GetTaskSlaveListResponseEntity>>>> Get(long taskId)
         {
+            if(taskId <= 0)
+            {
+                return BadRequest(new Response<IEnumerable<GetTaskSlaveListResponseEntity>>()
+                {
+                    Data = new List<GetTaskSlaveListResponseEntity>(),
+                    Message = "TaskId不合法"
+                });
+            }
+
+            var taskSlaves = await _repository.GetTaskSlave(taskId);
+
+            return Ok(new Response<IEnumerable<GetTaskSlaveListResponseEntity>>()
+            {
+                Data = taskSlaves.Select(x => {
+                    
+                    var rawData = JsonConvert.DeserializeObject<TaskSlaveData>(x.TaskSlave_Data);
+                    string trackingNumber = rawData.RowData[2];
+
+                    return new GetTaskSlaveListResponseEntity
+                    {
+                        OriginalTrackingNumber = trackingNumber,
+                        ErrorMessage = x.TaskSlave_ErrorMsg,
+                        CreatedDateTime = x.TaskSlave_CreatedDateTime,
+                        Status = x.TaskSlave_Status
+                    };
+                }).ToList()
+            });
 
         }
     }

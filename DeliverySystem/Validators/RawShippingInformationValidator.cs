@@ -20,7 +20,16 @@ namespace DeliverySystem.Validators
         public string Verify()
         {
             string message = string.Empty;
-            if (string.IsNullOrEmpty(data.ShippingInformation_OriginalTrackingNumber))
+            
+            if (string.IsNullOrEmpty(data.ShippingInformation_TrackingNumber))
+            {
+                return "運單號資料不得為空";
+            }
+            else if (data.ShippingInformation_TrackingNumber.Length > 20)
+            {
+                return "運單號資料長度超過20字";
+            }
+            else if (string.IsNullOrEmpty(data.ShippingInformation_OriginalTrackingNumber))
             {
                 return "原單號資料不得為空";
             }

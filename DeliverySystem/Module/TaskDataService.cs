@@ -256,7 +256,7 @@ namespace DeliverySystem.Module
                         return existingQueue;
                     });
 
-            await _repository.UpdateTaskSlaveStatus("Finish", taskSlave.TaskSlave_Id, string.Empty);
+            await _repository.UpdateTaskSlave("Finish", taskSlave.TaskSlave_Id, string.Empty);
         }
 
         public async Task AddOrUpdateFailTask(TaskSlave taskSlave)
@@ -269,7 +269,7 @@ namespace DeliverySystem.Module
                         return existingQueue;
                     });
 
-            await _repository.UpdateTaskSlaveStatus("Fail", taskSlave.TaskSlave_Id, taskSlave.TaskSlave_ErrorMsg);
+            await _repository.UpdateTaskSlave("Fail", taskSlave.TaskSlave_Id, taskSlave.TaskSlave_ErrorMsg);
         }
 
         public async Task RemoveFinishTask(long taskId, string status)

@@ -68,6 +68,28 @@ namespace DeliverySystem.Module
         }
 
         /// <summary>
+        /// 取得所有輸入的配送資料
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<TaskSlave>> GetTaskSlave(long taskId)
+        {
+            IEnumerable<TaskSlave> resutlt = new TaskSlave[0];
+
+            string cmd = $@"select * 
+                            from [ExampleDB].[dbo].[TaskSlave](NOLOCK)
+                            where TaskSlave_IsDeleted = 0
+                            and TaskSlave_TaskId = @taskId";
+
+            using (var sqlConnection = new SqlConnection(ConnectionString))
+            {
+                sqlConnection.Open();
+                resutlt = await sqlConnection.QueryAsync<TaskSlave>(cmd,new { taskId });
+            }
+
+            return resutlt;
+        }
+
+        /// <summary>
         /// 新增task
         /// </summary>
         /// <param name="task"></param>
@@ -352,7 +374,7 @@ namespace DeliverySystem.Module
             return effectiveRows == 1;
         }
 
-        public async Task<bool> UpdateTaskSlaveStatus(string status, long id, string message)
+        public async Task<bool> UpdateTaskSlave(string status, long id, string message)
         {
             int effectiveRows = 0;
             using (var connection = new SqlConnection(ConnectionString))
